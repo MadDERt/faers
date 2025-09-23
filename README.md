@@ -11,7 +11,7 @@
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Ask
-DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yunuuuu/ggalign)
+DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/WangLabCSU/faers)
 <!-- badges: end -->
 
 The FDA Adverse Event Reporting System (FAERS) stands as a database
@@ -1319,7 +1319,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] faers_1.5.2
+#> [1] faers_1.5.3
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] Matrix_1.7-1        bit_4.0.5           gtable_0.3.6       

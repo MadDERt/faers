@@ -25,7 +25,7 @@ cat("<!-- README.md is generated from README.Rmd. Please edit that file -->", se
 [![platform](http://www.bioconductor.org/shields/availability/devel/faers.svg)](https://www.bioconductor.org/packages/devel/bioc/html/faers.html#archives)
 [![R-CMD-check](https://github.com/WangLabCSU/faers/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/WangLabCSU/faers/actions/workflows/R-CMD-check.yaml)
 [![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yunuuuu/ggalign)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/WangLabCSU/faers)
 <!-- badges: end -->
 
 The FDA Adverse Event Reporting System (FAERS) stands as a database dedicated to
