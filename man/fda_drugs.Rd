@@ -30,6 +30,8 @@ dataset?}
 Read and Parse Drugs@FDA data
 }
 \examples{
+\dontrun{
 fda_drugs(list = TRUE)
 fda_drugs()
+}
 }

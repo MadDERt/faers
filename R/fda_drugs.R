@@ -13,8 +13,10 @@
 #' - if `list = TRUE`, an atomic character.
 #' - if `list = FALSE`, a [data.table][data.table::data.table].
 #' @examples
+#' \dontrun{
 #' fda_drugs(list = TRUE)
 #' fda_drugs()
+#' }
 #' @export
 fda_drugs <- function(pattern = "Products", url = NULL,
                       list = FALSE, force = FALSE) {
