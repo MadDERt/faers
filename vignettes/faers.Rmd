@@ -1,0 +1,39 @@
+---
+title: "fears: Pharmacovigilance"
+output: 
+  BiocStyle::html_document: 
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{FAERS-Pharmacovigilance}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_format = "github_document",
+      output_file = "README.md",
+      output_dir = getwd()
+    )
+  })
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    fig.path = "man/figures/README-",
+    out.width = "100%"
+)
+```
+
+# Vignette
+
+Please go to <https://github.com/WangLabCSU/faers> for the full vignette.
+
+# Need helps?
+
+If you encounter questions or issues, please provide a reproducible example and
+post it on the [GitHub issue tracker](https://github.com/WangLabCSU/faers/issues). 
+For general questions, you may also post on the 
+[Bioconductor support site](https://support.bioconductor.org/) and tag your post
+with *faers*.

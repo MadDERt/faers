@@ -1,18 +1,18 @@
-FAERS-Pharmacovigilance
-================
 
-- [Introduction](#introduction)
-- [Installation](#installation)
-- [Pharmacovigilance Analysis using
-  FAERS](#pharmacovigilance-analysis-using-faers)
-  - [Check metadata of FAERS](#check-metadata-of-faers)
-  - [Download and Parse quarterly data files from
-    FAERS](#download-and-parse-quarterly-data-files-from-faers)
-  - [Standardize and De-duplication](#standardize-and-de-duplication)
-  - [Pharmacovigilance analysis](#pharmacovigilance-analysis)
-- [sessionInfo](#sessioninfo)
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
-## Introduction
+# faers
+
+<!-- badges: start -->
+
+[![platform](http://www.bioconductor.org/shields/availability/devel/faers.svg)](https://www.bioconductor.org/packages/devel/bioc/html/faers.html#archives)
+[![R-CMD-check](https://github.com/WangLabCSU/faers/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/WangLabCSU/faers/actions/workflows/R-CMD-check.yaml)
+[![Project Status: Active - The project has reached a stable, usable
+state and is being actively
+developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Ask
+DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yunuuuu/ggalign)
+<!-- badges: end -->
 
 The FDA Adverse Event Reporting System (FAERS) stands as a database
 dedicated to the monitoring of post-marketing drug safety and exercises
@@ -159,6 +159,19 @@ faers_meta(internal = TRUE)
 #> 68:  2007      q3   July - September
 #> 69:  2007      q2       April - June
 #> 70:  2007      q1    January - March
+#> 71:  2006      q4 October - December
+#> 72:  2006      q3   July - September
+#> 73:  2006      q2       April - June
+#> 74:  2006      q1    January - March
+#> 75:  2005      q4 October - December
+#> 76:  2005      q3   July - September
+#> 77:  2005      q2       April - June
+#> 78:  2005      q1    January - March
+#> 79:  2004      q4 October - December
+#> 80:  2004      q3   July - September
+#> 81:  2004      q2       April - June
+#> 82:  2004      q1    January - March
+#>      year quarter             period
 #>                                                     ascii_urls ascii_file_size
 #>                                                         <char>          <char>
 #>  1: https://fis.fda.gov/content/Exports/faers_ascii_2024q2.zip          63.9MB
@@ -231,6 +244,19 @@ faers_meta(internal = TRUE)
 #> 68:  https://fis.fda.gov/content/Exports/aers_ascii_2007q3.zip           9.9MB
 #> 69:  https://fis.fda.gov/content/Exports/aers_ascii_2007q2.zip           9.5MB
 #> 70:  https://fis.fda.gov/content/Exports/aers_ascii_2007q1.zip           9.6MB
+#> 71:  https://fis.fda.gov/content/Exports/aers_ascii_2006q4.zip           9.1MB
+#> 72:  https://fis.fda.gov/content/Exports/aers_ascii_2006q3.zip           8.5MB
+#> 73:  https://fis.fda.gov/content/Exports/aers_ascii_2006q2.zip           9.7MB
+#> 74:  https://fis.fda.gov/content/Exports/aers_ascii_2006q1.zip            11MB
+#> 75:  https://fis.fda.gov/content/Exports/aers_ascii_2005q4.zip           9.7MB
+#> 76:  https://fis.fda.gov/content/Exports/aers_ascii_2005q3.zip           9.3MB
+#> 77:  https://fis.fda.gov/content/Exports/aers_ascii_2005q2.zip           9.5MB
+#> 78:  https://fis.fda.gov/content/Exports/aers_ascii_2005q1.zip           8.5MB
+#> 79:  https://fis.fda.gov/content/Exports/aers_ascii_2004q4.zip           8.1MB
+#> 80:  https://fis.fda.gov/content/Exports/aers_ascii_2004q3.zip           8.2MB
+#> 81:  https://fis.fda.gov/content/Exports/aers_ascii_2004q2.zip           7.1MB
+#> 82:  https://fis.fda.gov/content/Exports/aers_ascii_2004q1.zip           7.3MB
+#>                                                     ascii_urls ascii_file_size
 #>                                                     xml_urls xml_file_size
 #>                                                       <char>        <char>
 #>  1: https://fis.fda.gov/content/Exports/faers_xml_2024q2.zip         126MB
@@ -303,7 +329,19 @@ faers_meta(internal = TRUE)
 #> 68: https://fis.fda.gov/content/Exports/aers_sgml_2007q3.zip          13MB
 #> 69: https://fis.fda.gov/content/Exports/aers_sgml_2007q2.zip          12MB
 #> 70: https://fis.fda.gov/content/Exports/aers_sgml_2007q1.zip          12MB
-#>  [ reached getOption("max.print") -- omitted 13 rows ]
+#> 71: https://fis.fda.gov/content/Exports/aers_sgml_2006q4.zip          12MB
+#> 72: https://fis.fda.gov/content/Exports/aers_sgml_2006q3.zip          11MB
+#> 73: https://fis.fda.gov/content/Exports/aers_sgml_2006q2.zip          13MB
+#> 74: https://fis.fda.gov/content/Exports/aers_sgml_2006q1.zip          13MB
+#> 75: https://fis.fda.gov/content/Exports/aers_sgml_2005q4.zip          12MB
+#> 76: https://fis.fda.gov/content/Exports/aers_sgml_2005q3.zip          12MB
+#> 77: https://fis.fda.gov/content/Exports/aers_sgml_2005q2.zip          12MB
+#> 78: https://fis.fda.gov/content/Exports/aers_sgml_2005q1.zip          11MB
+#> 79: https://fis.fda.gov/content/Exports/aers_sgml_2004q4.zip         9.8MB
+#> 80: https://fis.fda.gov/content/Exports/aers_sgml_2004q3.zip         9.7MB
+#> 81: https://fis.fda.gov/content/Exports/aers_sgml_2004q2.zip         8.6MB
+#> 82: https://fis.fda.gov/content/Exports/aers_sgml_2004q1.zip         8.8MB
+#>                                                     xml_urls xml_file_size
 ```
 
 ### Download and Parse quarterly data files from FAERS
@@ -947,6 +985,19 @@ insulin_signals
 #> 13:                                                      Investigations     5
 #> 14:                                  Metabolism and nutrition disorders     2
 #> 15:                     Musculoskeletal and connective tissue disorders     2
+#> 16: Neoplasms benign, malignant and unspecified (incl cysts and polyps)     1
+#> 17:                                            Nervous system disorders     1
+#> 18:                      Pregnancy, puerperium and perinatal conditions     0
+#> 19:                                                      Product issues     1
+#> 20:                                               Psychiatric disorders     0
+#> 21:                                         Renal and urinary disorders     2
+#> 22:                            Reproductive system and breast disorders     0
+#> 23:                     Respiratory, thoracic and mediastinal disorders     0
+#> 24:                              Skin and subcutaneous tissue disorders     0
+#> 25:                                                Social circumstances     1
+#> 26:                                     Surgical and medical procedures     0
+#> 27:                                                  Vascular disorders     2
+#>                                                                soc_name     a
 #>         b     c     d expected       ror ror_ci_low ror_ci_high       prr
 #>     <int> <int> <int>    <num>     <num>      <num>       <num>     <num>
 #>  1:     8    10   181    0.495 2.2625000 0.25725215   19.898400 2.1222222
@@ -964,6 +1015,19 @@ insulin_signals
 #> 13:     4    23   168    1.260 9.1304348 2.28530339   36.478675 4.6135266
 #> 14:     7    16   175    0.810 3.1250000 0.59851341   16.316468 2.6527778
 #> 15:     7    16   175    0.810 3.1250000 0.59851341   16.316468 2.6527778
+#> 16:     8    11   180    0.540 2.0454545 0.23444599   17.845834 1.9292929
+#> 17:     8    40   151    1.845 0.4718750 0.05733113    3.883859 0.5305556
+#> 18:     9     3   188    0.135 0.0000000 0.00000000         NaN 0.0000000
+#> 19:     8     3   188    0.180 7.8333333 0.73139192   83.896348 7.0740741
+#> 20:     9    24   167    1.080 0.0000000 0.00000000         NaN 0.0000000
+#> 21:     7    10   181    0.540 5.1714286 0.94895135   28.182344 4.2444444
+#> 22:     9     8   183    0.360 0.0000000 0.00000000         NaN 0.0000000
+#> 23:     9    24   167    1.080 0.0000000 0.00000000         NaN 0.0000000
+#> 24:     9    25   166    1.125 0.0000000 0.00000000         NaN 0.0000000
+#> 25:     8     4   187    0.225 5.8437500 0.58429248   58.445753 5.3055556
+#> 26:     9     8   183    0.360 0.0000000 0.00000000         NaN 0.0000000
+#> 27:     7    16   175    0.810 3.1250000 0.59851341   16.316468 2.6527778
+#>         b     c     d expected       ror ror_ci_low ror_ci_high       prr
 #>     prr_ci_low prr_ci_high        chisq chisq_pvalue bcpnn_norm_ic
 #>          <num>       <num>        <num>        <num>         <num>
 #>  1: 0.30379118   14.825405 5.596283e-05  0.994031217    0.07104720
@@ -981,6 +1045,19 @@ insulin_signals
 #> 13: 2.29367967    9.279686 1.014420e+01  0.001447562    1.27887175
 #> 14: 0.71637974    9.823324 6.763452e-01  0.410848097    0.48796446
 #> 15: 0.71637974    9.823324 6.763452e-01  0.410848097    0.48796446
+#> 16: 0.27867155   13.356839 5.179789e-31  1.000000000    0.02251624
+#> 17: 0.08191009    3.436563 8.497112e-02  0.770670432   -0.91707298
+#> 18: 0.00000000         NaN 6.503567e-28  1.000000000   -0.83645056
+#> 19: 0.81404536   61.473877 6.078522e-01  0.435597637    0.50967486
+#> 20: 0.00000000         NaN 3.706348e-01  0.542658454   -1.88957045
+#> 21: 1.08605335   16.587867 1.901155e+00  0.167949117    0.74386377
+#> 22: 0.00000000         NaN 2.060599e-30  1.000000000   -1.21102556
+#> 23: 0.00000000         NaN 3.706348e-01  0.542658454   -1.88957045
+#> 24: 0.00000000         NaN 4.155240e-01  0.519178986   -1.92209090
+#> 25: 0.65830889   42.759440 3.609731e-01  0.547966277    0.42857489
+#> 26: 0.00000000         NaN 2.060599e-30  1.000000000   -1.21102556
+#> 27: 0.71637974    9.823324 6.763452e-01  0.410848097    0.48796446
+#>     prr_ci_low prr_ci_high        chisq chisq_pvalue bcpnn_norm_ic
 #>     bcpnn_norm_ic_ci_low bcpnn_norm_ic_ci_high bcpnn_mcmc_ic
 #>                    <num>                 <num>         <num>
 #>  1:           -2.4976231              2.639718    0.59289239
@@ -998,6 +1075,19 @@ insulin_signals
 #> 13:           -0.2922032              2.849947    1.64403679
 #> 14:           -1.5933747              2.569304    0.93273250
 #> 15:           -1.5933747              2.569304    0.93273250
+#> 16:           -2.5351757              2.580208    0.52901100
+#> 17:           -3.3836017              1.549456   -0.64454205
+#> 18:           -4.8584283              3.185527   -0.34296004
+#> 19:           -2.2615661              3.280916    1.14296841
+#> 20:           -5.6602222              1.881081   -1.65968802
+#> 21:           -1.3875476              2.875275    1.26597659
+#> 22:           -5.0634114              2.641360   -0.78144234
+#> 23:           -5.6602222              1.881081   -1.65968802
+#> 24:           -5.6909944              1.846813   -1.70021904
+#> 25:           -2.2841247              3.141275    1.05031343
+#> 26:           -5.0634114              2.641360   -0.78144234
+#> 27:           -1.5933747              2.569304    0.93273250
+#>     bcpnn_norm_ic_ci_low bcpnn_norm_ic_ci_high bcpnn_mcmc_ic
 #>     bcpnn_mcmc_ic_ci_low bcpnn_mcmc_ic_ci_high    oe_ratio oe_ratio_ci_low
 #>                    <num>                 <num>       <num>           <num>
 #>  1:           -3.0102202             2.0880732  0.59219407      -3.1909068
@@ -1015,6 +1105,19 @@ insulin_signals
 #> 13:            0.4991892             2.3671228  1.64385619       0.0816764
 #> 14:           -1.3982876             2.0999196  0.93236128      -1.6607064
 #> 15:           -1.4095817             2.0956930  0.93236128      -1.6607064
+#> 16:           -3.0786698             2.0294859  0.52837897      -3.2547219
+#> 17:           -4.2560012             0.8288726 -0.64462542      -4.4277262
+#> 18:          -10.3011304             1.9170711 -0.34482850     -10.3155180
+#> 19:           -2.4488198             2.6368406  1.14135585      -2.6417450
+#> 20:          -11.5285216             0.5911325 -1.65992456     -11.4721835
+#> 21:           -1.0690560             2.4463628  1.26534457      -1.3277231
+#> 22:          -10.6749673             1.4699290 -0.78240856     -10.5947975
+#> 23:          -11.5580887             0.5734166 -1.65992456     -11.5750269
+#> 24:          -11.6110917             0.5410790 -1.70043972     -11.5472336
+#> 25:           -2.5731251             2.5479582  1.04890960      -2.7341912
+#> 26:          -10.7515728             1.4719399 -0.78240856     -10.5758472
+#> 27:           -1.4263596             2.1035696  0.93236128      -1.6607064
+#>     bcpnn_mcmc_ic_ci_low bcpnn_mcmc_ic_ci_high    oe_ratio oe_ratio_ci_low
 #>     oe_ratio_ci_high odds_ratio odds_ratio_ci_low odds_ratio_ci_high
 #>                <num>      <num>             <num>              <num>
 #>  1:        2.2796203  2.2497947        0.04640325          19.939227
@@ -1032,6 +1135,19 @@ insulin_signals
 #> 13:        2.6284559  8.9547789        1.78787699          48.608711
 #> 14:        2.3237635  3.0984073        0.29094788          18.237662
 #> 15:        2.3237635  3.0984073        0.29094788          18.237662
+#> 16:        2.2158052  2.0357373        0.04229773          17.759847
+#> 17:        1.0428008  0.4733234        0.01038232           3.707634
+#> 18:        1.9044035  0.0000000        0.00000000          55.536645
+#> 19:        2.8287821  7.6414750        0.13278007         108.451210
+#> 20:        0.5869292  0.0000000        0.00000000           3.784543
+#> 21:        2.6567467  5.0920061        0.45981231          32.050753
+#> 22:        1.4744826  0.0000000        0.00000000          14.062857
+#> 23:        0.5884837  0.0000000        0.00000000           3.784543
+#> 24:        0.5428468  0.0000000        0.00000000           3.603243
+#> 25:        2.7363359  5.7345262        0.10559993          67.788905
+#> 26:        1.4520834  0.0000000        0.00000000          14.062857
+#> 27:        2.3237635  3.0984073        0.29094788          18.237662
+#>     oe_ratio_ci_high odds_ratio odds_ratio_ci_low odds_ratio_ci_high
 #>     fisher_pvalue     ebgm ebgm_ci_low ebgm_ci_high
 #>             <num>    <num>       <num>        <num>
 #>  1:    0.40543496 1.395816        0.91         2.05
@@ -1049,7 +1165,19 @@ insulin_signals
 #> 13:    0.00322619 1.560910        1.06         2.22
 #> 14:    0.18867787 1.428183        0.94         2.08
 #> 15:    0.18867787 1.428183        0.94         2.08
-#>  [ reached getOption("max.print") -- omitted 13 rows ]
+#> 16:    0.43374758 1.392130        0.91         2.04
+#> 17:    0.68896933 1.293095        0.85         1.90
+#> 18:    1.00000000 1.365913        0.89         2.02
+#> 19:    0.16939961 1.422177        0.93         2.09
+#> 20:    0.60327044 1.292486        0.84         1.91
+#> 21:    0.09399613 1.450814        0.96         2.11
+#> 22:    1.00000000 1.347683        0.88         1.99
+#> 23:    0.60327044 1.292486        0.84         1.91
+#> 24:    0.60552458 1.289186        0.84         1.90
+#> 25:    0.20753942 1.418351        0.93         2.08
+#> 26:    1.00000000 1.347683        0.88         1.99
+#> 27:    0.18867787 1.428183        0.94         2.08
+#>     fisher_pvalue     ebgm ebgm_ci_low ebgm_ci_high
 ```
 
 The column containing the events of interest can be specified using an
@@ -1191,7 +1319,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] faers_1.1.7
+#> [1] faers_1.5.2
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] Matrix_1.7-1        bit_4.0.5           gtable_0.3.6       

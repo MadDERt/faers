@@ -1,32 +1,32 @@
 ---
-title: "FAERS-Pharmacovigilance"
-output: 
-  BiocStyle::html_document: 
-    toc: true
-  github_document: 
-    toc: true
-vignette: >
-  %\VignetteIndexEntry{FAERS-Pharmacovigilance}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
-knit: (function(input, ...) {
-    rmarkdown::render(
-      input,
-      output_format = "github_document",
-      output_file = "README.md",
-      output_dir = getwd()
-    )
-  })
+output:
+  github_document:
+    html_preview: FALSE
+params:
+  readme: true
+  learning_link: true
 ---
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
     collapse = TRUE,
-    comment = "#>"
+    comment = "#>",
+    fig.path = "man/figures/README-",
+    out.width = "100%"
 )
 ```
 
-## Introduction
+```{r, results="asis", echo=FALSE, eval=isTRUE(params$readme)}
+cat("<!-- README.md is generated from README.Rmd. Please edit that file -->", sep = "\n")
+```
+
+# faers
+<!-- badges: start -->
+[![platform](http://www.bioconductor.org/shields/availability/devel/faers.svg)](https://www.bioconductor.org/packages/devel/bioc/html/faers.html#archives)
+[![R-CMD-check](https://github.com/WangLabCSU/faers/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/WangLabCSU/faers/actions/workflows/R-CMD-check.yaml)
+[![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yunuuuu/ggalign)
+<!-- badges: end -->
 
 The FDA Adverse Event Reporting System (FAERS) stands as a database dedicated to
 the monitoring of post-marketing drug safety and exercises a notable influence
