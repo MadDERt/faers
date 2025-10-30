@@ -1,0 +1,14 @@
+name: Send to Feishu
+on:
+  push:
+    branches: [ main, devel ]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification to Feishu
+        uses: XRSec/feishu-bot-webhook-action@v1
+        with:
+          FEISHU_BOT_WEBHOOK: ${{ secrets.FEISHU_BOT_WEBHOOK }}
+          FEISHU_BOT_SIGNKEY: ${{ secrets.FEISHU_BOT_SIGNKEY }}
