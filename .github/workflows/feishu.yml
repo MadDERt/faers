@@ -1,7 +1,11 @@
-name: Send to Feishu
+name: Notify on Events
 on:
   push:
     branches: [ main, devel ]
+  pull_request:
+    types: [ opened, synchronize, closed ]
+  issues:
+    types: [ opened, closed ]
 
 jobs:
   notify:
