@@ -6,6 +6,8 @@ on:
     types: [ opened, synchronize, closed ]
   issues:
     types: [ opened, closed ]
+  issue_comment:
+    types: [ created, edited ]
 
 jobs:
   notify:
