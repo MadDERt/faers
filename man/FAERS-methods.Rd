@@ -9,6 +9,7 @@
 \alias{faers_primaryid,FAERSascii-method}
 \alias{[,FAERSascii,ANY,ANY,ANY-method}
 \alias{[,FAERSascii-method}
+\alias{[[,FAERSascii,ANY,ANY-method}
 \alias{[[,FAERSascii-method}
 \alias{$,FAERSascii-method}
 \alias{faers_keep}
@@ -33,7 +34,7 @@ faers_primaryid(object, ...)
 
 \S4method{[}{FAERSascii,ANY,ANY,ANY}(x, i)
 
-\S4method{[[}{FAERSascii}(x, i)
+\S4method{[[}{FAERSascii,ANY,ANY}(x, i)
 
 \S4method{$}{FAERSascii}(x, name)
 
