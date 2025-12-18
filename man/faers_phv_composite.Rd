@@ -52,6 +52,11 @@ defines the set of adverse events of interest.}
 
 \item{.object2}{A \link{FAERSascii} object with data from another interested drug.}
 
+\item{.event_type}{A character string specifying the type of adverse event to use.
+Must be one of the two specific literal values: \code{"pt"} (Preferred Term) or
+\code{"soc_name"} (System Organ Class name). Any other value will cause an error.
+Defaults to \code{"pt"}.}
+
 \item{.methods}{Analysis methods to use (passed to \link{phv_signal}).}
 
 \item{.phv_signal_params}{Other arguments passed to \link{phv_signal}.}

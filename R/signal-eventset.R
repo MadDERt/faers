@@ -9,6 +9,10 @@
 #' `.object` will be regarded as `n1.`.
 #' @param .event_set A character vector of PT terms or a logical expression that
 #' defines the set of adverse events of interest.
+#' @param .event_type A character string specifying the type of adverse event to use.
+#' Must be one of the two specific literal values: `"pt"` (Preferred Term) or
+#' `"soc_name"` (System Organ Class name). Any other value will cause an error.
+#' Defaults to `"pt"`.
 #' @param ... Other arguments passed to specific methods.
 #' @return A [data.table][data.table::data.table] object with contingency tables
 #' for the specified event set.
