@@ -79,9 +79,6 @@ pak::pkg_install("WangLabCSU/faers")
 
 The faers package provides a standardized pipeline that unifies complex pharmacovigilance workflows. For a comprehensive, step-by-step demonstration—including data acquisition and a complete Insulin case study—please refer to our detailed documentation:
 
-👉 **[Full Workflow Tutorial](vignettes/full-workflow.Rmd)**
+👉 **[Full Workflow Tutorial](https://MadDERt.github.io/faers/articles/full-workflow.html)**
 
-## sessionInfo
-```{r}
-sessionInfo()
-```
+

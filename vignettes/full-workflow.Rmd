@@ -22,7 +22,7 @@ medication errors involving human drugs and therapeutic biological products.
 This package accelarate the process of Pharmacovigilance Analysis using FAERS.
 
 ```{r setup}
-library(faers)
+devtools::load_all()
 ```
 
 ### Check metadata of FAERS
@@ -210,4 +210,9 @@ insulin_signals_hlgt <- faers_phv_signal(
     BPPARAM = BiocParallel::SerialParam(RNGseed = 1L)
 )
 insulin_signals_hlgt
+```
+
+## sessionInfo
+```{r}
+sessionInfo()
 ```
