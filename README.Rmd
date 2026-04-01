@@ -80,7 +80,10 @@ library(faers)
 faers_meta(internal = TRUE)
 ```
 
-- 👉 **[Full Workflow Tutorial](https://MadDERt.github.io/faers/articles/full-workflow.html)**
-- 
+The official documentation provides comprehensive guides for both clinical researchers and bioinformaticians.
+
+-  🌐 **[Official Website](https://MadDERt.github.io/faers/)**: The central portal for package overview and function references.
+-  🚀 **[Full Workflow Tutorial](https://MadDERt.github.io/faers/articles/full-workflow.html)**: A complete end-to-end analysis case study (e.g., Insulin-related adverse events).
+-  🧭 **[Getting Started: Portal](https://MadDERt.github.io/faers/articles/faers.html)**: Quick-start guide and roadmap for using the `faers` package.
 
 
