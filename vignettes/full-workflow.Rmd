@@ -39,7 +39,7 @@ faers_meta()
 
 An metadata copy was associated with the package, just set `internal = TRUE`.
 ```{r}
-faers_meta(internal = TRUE)
+head(faers_meta(internal = TRUE),3)
 ```
 
 ### Download and Parse quarterly data files from FAERS
@@ -88,7 +88,7 @@ data2
 You can use `faers_get()` to get specific field data, a data.table will be
 returned. 
 ```{r}
-faers_get(data2, "demo")
+head(faers_get(data2, "demo"),3)
 ```
 
 ### Standardize and De-duplication
@@ -107,7 +107,7 @@ data <- faers_standardize(data2, meddra_path)
 To proceed following steps, we just read a standardized data.
 ```{r}
 data <- readRDS(system.file("extdata", "standardized_data.rds", package = "faers"))
-data
+head(data,3)
 ```
 
 The internal will save the complete MedDRA data in the `@meddra` slot, MedDRA
@@ -115,7 +115,7 @@ consists of two components: hierarchy and SMQ data. We can specify these
 components using the use argument.
 ```{r}
 faers_meddra(data)
-faers_meddra(data, use = "hierarchy")
+head(faers_meddra(data, use = "hierarchy"),3)
 ```
 
 The internal will include a `meddra_hierarchy_idx` column that represents the
@@ -130,11 +130,11 @@ data using the `faers_meddra()` function.  When we use `faers_get()` to retrieve
 `indi` or `reac` data from the standardized `FAERSascii` object, the meddra
 hierarchy columns are automatically added to the returned data.table. 
 ```{r}
-faers_get(data, "indi")
+head(faers_get(data, "indi"),3)
 ```
 
 ```{r}
-faers_get(data, "reac")
+head(faers_get(data, "reac"),3)
 ```
 
 One limitation of FAERS database is duplicate and incomplete reports. There are
@@ -195,7 +195,7 @@ insulin_signals <- faers_phv_signal(insulin_data,
     .full = data,
     BPPARAM = BiocParallel::SerialParam(RNGseed = 1L)
 )
-insulin_signals
+head(insulin_signals,3)
 ```
 
 The column containing the events of interest can be specified using an atomic
@@ -209,7 +209,7 @@ insulin_signals_hlgt <- faers_phv_signal(
     .events = "hlgt_name", .full = data,
     BPPARAM = BiocParallel::SerialParam(RNGseed = 1L)
 )
-insulin_signals_hlgt
+head(insulin_signals_hlgt,3)
 ```
 
 ## sessionInfo

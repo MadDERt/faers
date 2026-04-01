@@ -14,10 +14,6 @@ developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.re
 DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/WangLabCSU/faers)
 <!-- badges: end -->
 
-Here is the polished English version:
-
-------------------------------------------------------------------------
-
 Modern biologics, such as immune checkpoint inhibitors, exhibit complex
 toxicity profiles that are often underrepresented in pre-market clinical
 trials. While the FAERS database serves as a critical resource for
@@ -85,6 +81,11 @@ The faers package provides a standardized pipeline that unifies complex
 pharmacovigilance workflows. For a comprehensive, step-by-step
 demonstration—including data acquisition and a complete Insulin case
 study—please refer to our detailed documentation:
+
+``` r
+library(faers)
+faers_meta(internal = TRUE)
+```
 
 👉 **[Full Workflow
 Tutorial](https://MadDERt.github.io/faers/articles/full-workflow.html)**

@@ -28,10 +28,6 @@ cat("<!-- README.md is generated from README.Rmd. Please edit that file -->", se
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/WangLabCSU/faers)
 <!-- badges: end -->
 
-Here is the polished English version:
-
----
-
 Modern biologics, such as immune checkpoint inhibitors, exhibit complex toxicity profiles that are often underrepresented in pre-market clinical trials. While the FAERS database serves as a critical resource for real-world safety surveillance, its intricate relational structure and data inconsistencies pose significant barriers to large-scale epidemiological analyses.
 
 To address these challenges, we developed `faers`, an end-to-end, reproducible framework for precision pharmacovigilance. The package streamlines the entire workflow—from raw data acquisition and rigorous preprocessing to signal detection—empowering researchers to transform vast spontaneous reporting data into actionable clinical insights.
@@ -79,6 +75,12 @@ pak::pkg_install("WangLabCSU/faers")
 
 The faers package provides a standardized pipeline that unifies complex pharmacovigilance workflows. For a comprehensive, step-by-step demonstration—including data acquisition and a complete Insulin case study—please refer to our detailed documentation:
 
-👉 **[Full Workflow Tutorial](https://MadDERt.github.io/faers/articles/full-workflow.html)**
+```r
+library(faers)
+faers_meta(internal = TRUE)
+```
+
+- 👉 **[Full Workflow Tutorial](https://MadDERt.github.io/faers/articles/full-workflow.html)**
+- 
 
 
