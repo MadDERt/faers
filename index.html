@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>R interface for FDA Adverse Event Reporting System • faers</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/flatly/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="bootstrap-toc.css">
 <script src="bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
@@ -47,13 +47,16 @@
 </li>
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-    Articles
+    📖 Tutorials
 
     <span class="caret"></span>
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="articles/full-workflow.html">full-workflow</a>
+      <a href="articles/faers.html">Getting Started</a>
+    </li>
+    <li>
+      <a href="articles/full-workflow.html">Full Workflow Case Study</a>
     </li>
   </ul>
 </li>
@@ -87,16 +90,18 @@
 
 <p>Modern biologics, such as immune checkpoint inhibitors, exhibit complex toxicity profiles that are often underrepresented in pre-market clinical trials. While the FAERS database serves as a critical resource for real-world safety surveillance, its intricate relational structure and data inconsistencies pose significant barriers to large-scale epidemiological analyses.</p>
 <p>To address these challenges, we developed <code>faers</code>, an end-to-end, reproducible framework for precision pharmacovigilance. The package streamlines the entire workflow—from raw data acquisition and rigorous preprocessing to signal detection—empowering researchers to transform vast spontaneous reporting data into actionable clinical insights.</p>
+<p align="center">
+<img src="reference/figures/workflow.png" width="80%" alt="faers Analysis Workflow"></p>
 <div class="section level2">
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
 <ul>
 <li><p>📥 <strong>Data Acquisition</strong>: Automated downloading and parsing of FAERS quarterly data (supporting both ASCII and XML formats).</p></li>
-<li><p>🛠️ <strong>Rigorous Preprocessing</strong>: Advanced multi-quarter data merging and robust deduplication logic to ensure high data fidelity.</p></li>
-<li><p>🔍 <strong>Terminology Standardization</strong>: Seamless integration with MedDRA, RxNorm, and the FDA Drugs API for precise mapping of drugs and adverse events.</p></li>
-<li><p>📊 <strong>Advanced Signal Detection</strong>: Comprehensive support for disproportionality analysis, including ROR, PRR, BCPNN, and EBGM.</p></li>
-<li><p>⚡ <strong>High-Performance Computing</strong>: Integrated with BiocParallel for memory-efficient, parallelized processing of millions of records.</p></li>
-<li><p>🌐 <strong>Knowledge Integration</strong>: Direct support for Athena drug vocabularies and Standardised MedDRA Queries (SMQ) for mechanism-driven research.</p></li>
+<li><p>🛠️ <strong>Rigorous Preprocessing</strong>:Multi-quarter data merging and deduplication logic for data quality control.</p></li>
+<li><p>🔍 <strong>Terminology Standardization</strong>: Integration with MedDRA and RxNorm for precise mapping of drugs and adverse events.</p></li>
+<li><p>📊 <strong>Advanced Signal Detection</strong>: Comprehensive disproportionality analysis, including ROR, PRR, BCPNN, and EBGM.</p></li>
+<li><p>⚡ <strong>High-Performance Computing</strong>: BiocParallel integration for memory-efficient, parallelized processing.</p></li>
+<li><p>🌐 <strong>Knowledge Integration</strong>: Support for Athena drug vocabularies and Standardized MedDRA Queries (SMQ) for mechanism-driven research.</p></li>
 </ul>
 </div>
 <div class="section level2">
@@ -124,10 +129,54 @@
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <p>The faers package provides a standardized pipeline that unifies complex pharmacovigilance workflows. For a comprehensive, step-by-step demonstration—including data acquisition and a complete Insulin case study—please refer to our detailed documentation:</p>
+<p>The following workflow demonstrates how to perform a basic pharmacovigilance analysis for <strong>Aspirin</strong> using <code>faers</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">faers</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/faers_meta.html">faers_meta</a></span><span class="op">(</span>internal <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>👉 <strong><a href="https://MadDERt.github.io/faers/articles/full-workflow.html" class="external-link">Full Workflow Tutorial</a></strong></p>
+<span></span>
+<span><span class="co"># 1. Download and Parse Data (2023 Q1-Q2)</span></span>
+<span><span class="co"># Note: Ensure you have enough disk space in the target directory</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/faers.html">faers</a></span><span class="op">(</span><span class="fl">2023</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"q1"</span>, <span class="st">"q2"</span><span class="op">)</span>, dir <span class="op">=</span> <span class="st">"./faers_data"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 2. Standardization (Requires MedDRA dictionary)</span></span>
+<span><span class="va">data_stand</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/faers_standardize.html">faers_standardize</a></span><span class="op">(</span><span class="va">data</span>, meddra_path <span class="op">=</span> <span class="st">"path/to/MedDRA"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 3. Deduplication (Requires Standardized data)</span></span>
+<span><span class="va">data_dedup</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/faers_dedup.html">faers_dedup</a></span><span class="op">(</span><span class="va">data_stand</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 4.Signal Detection (Data screening for items of interest is needed, such as "aspirin".)</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/faers_phv_signal.html">faers_phv_signal</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="reference/FAERS-methods.html">faers_filter</a></span><span class="op">(</span><span class="va">data_dedup</span>, .fn <span class="op">=</span> <span class="op">~</span> <span class="va">drugname</span> <span class="op">==</span> <span class="st">"aspirin"</span><span class="op">)</span>,</span>
+<span>    .full <span class="op">=</span> <span class="va">data_dedup</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
+</h2>
+<p>The official documentation provides comprehensive guides for both clinical researchers and bioinformaticians.</p>
+<ul>
+<li>🌐 <strong><a href="https://MadDERt.github.io/faers/">Official Website</a></strong>: The central portal for package overview and function references.</li>
+<li>🚀 <strong><a href="https://MadDERt.github.io/faers/articles/full-workflow.html">Full Workflow Tutorial</a></strong>: A complete end-to-end analysis case study (e.g., Insulin-related adverse events).</li>
+<li>🧭 <strong><a href="https://MadDERt.github.io/faers/articles/faers.html">Getting Started: Portal</a></strong>: Quick-start guide and roadmap for using the <code>faers</code> package.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
+</h2>
+<p>Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are <strong>greatly appreciated</strong>.</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Report Bugs</strong>: Submit an <a href="https://github.com/WangLabCSU/faers/issues" class="external-link">issue</a> if you find any calculation errors or data parsing failures.</p></li>
+<li><p><strong>Feature Requests</strong>: Have an idea for a new signal detection algorithm? Open an issue to discuss it.</p></li>
+<li>
+<p><strong>Pull Requests</strong>:</p>
+<ul>
+<li><p>Fork the project.</p></li>
+<li><p>Create your Feature Branch (<code>git checkout -b feature/AmazingFeature</code>).</p></li>
+<li><p>Commit your changes (<code>git commit -m 'Add some AmazingFeature'</code>).</p></li>
+<li><p>Push to the Branch (<code>git push origin feature/AmazingFeature</code>).</p></li>
+<li><p>Open a Pull Request.</p></li>
+</ul>
+</li>
+</ol>
 </div>
 </div>
   </div>
