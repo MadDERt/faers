@@ -15,5 +15,5 @@ navbar:
           href: articles/faers.html
         - text: "Full Workflow Case Study"
           href: articles/full-workflow.html
-        - text: Full Manual (PDF from Bioc)
+        - text: "Full Manual"  
           href: https://bioconductor.org/packages/devel/bioc/manuals/faers/man/faers.pdf
