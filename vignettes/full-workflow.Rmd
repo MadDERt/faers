@@ -22,7 +22,7 @@ medication errors involving human drugs and therapeutic biological products.
 This package accelarate the process of Pharmacovigilance Analysis using FAERS.
 
 ```{r setup}
-devtools::load_all()
+library(faers)
 ```
 
 ### Check metadata of FAERS
