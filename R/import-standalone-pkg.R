@@ -70,13 +70,13 @@ is_installed <- local({
     }
 })
 
-install_pkgs <- function(pkgs) {
-    if (is_installed("pak")) {
-        getExportedValue("pak", "pkg_install")(pkgs, ask = FALSE)
-    } else {
-        utils::install.packages(pkgs)
-    }
-}
+# install_pkgs <- function(pkgs) {
+#     if (is_installed("pak")) {
+#         getExportedValue("pak", "pkg_install")(pkgs, ask = FALSE)
+#     } else {
+#         utils::install.packages(pkgs)
+#     }
+# }
 
 pkg_nm <- function() utils::packageName(environment())
 
