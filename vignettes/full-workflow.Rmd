@@ -168,6 +168,8 @@ fda_insulin <- fda_drugs()[
 ```
 
 ```{r, echo=FALSE}
+insulin_names <- "insulin"
+insulin_pattern <- paste(insulin_names, collapse = "|")
 data_path <- system.file("extdata", "fda_insulin.rds", package = "faers")
 
 if (data_path == "") {
