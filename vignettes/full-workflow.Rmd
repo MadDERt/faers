@@ -159,7 +159,7 @@ data specified in `.field`. It is important to note that `.fn` should always
 return the `primaryid` that you want to keep. 
 
 To enhance our analysis, it would be advantageous to include all drug synonym names for `insulin`. These synonyms can be obtained by querying sources such as https://go.drugbank.com/ or alternative databases. Furthermore, we extract the brand names of insulin from the [Drugs@FDA](https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files) dataset, which can be easily obtained using the `fda_drugs()` function. 
-```{r,eval=FALSE}
+```{r}
 insulin_names <- "insulin"
 insulin_pattern <- paste(insulin_names, collapse = "|")
 fda_insulin <- fda_drugs()[
@@ -190,7 +190,7 @@ background distributions data (usually the entire FAERS data), or you can
 specify `.object2`, which should be the control data or another drug of interest
 for comparison.
 
-```{r, warning=FALSE}
+```{r}
 insulin_signals <- faers_phv_signal(insulin_data,
     .full = data,
     BPPARAM = BiocParallel::SerialParam(RNGseed = 1L)
@@ -203,7 +203,7 @@ character in the `.events` (default: "soc_name") argument. The combination of
 all specified columns will define the unique event. Additionally, we can control
 which field data to find the columns in the `.field` (default: "reac") argument.
 
-```{r, warning=FALSE}
+```{r}
 insulin_signals_hlgt <- faers_phv_signal(
     insulin_data,
     .events = "hlgt_name", .full = data,
