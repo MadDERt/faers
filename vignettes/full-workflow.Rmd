@@ -177,7 +177,7 @@ if (data_path == "") {
 }
 ```
 
-```{r, eval=FALSE}
+```{r}
 insulin_pattern <- paste0(
     unique(tolower(c(insulin_names, fda_insulin$DrugName))),
     collapse = "|"
