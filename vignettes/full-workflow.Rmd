@@ -159,7 +159,7 @@ data specified in `.field`. It is important to note that `.fn` should always
 return the `primaryid` that you want to keep. 
 
 To enhance our analysis, it would be advantageous to include all drug synonym names for `insulin`. These synonyms can be obtained by querying sources such as https://go.drugbank.com/ or alternative databases. Furthermore, we extract the brand names of insulin from the [Drugs@FDA](https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files) dataset, which can be easily obtained using the `fda_drugs()` function. 
-```{r}
+```{r,eval=FALSE}
 insulin_names <- "insulin"
 insulin_pattern <- paste(insulin_names, collapse = "|")
 fda_insulin <- fda_drugs()[
