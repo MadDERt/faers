@@ -27,10 +27,10 @@ streamlines the entire workflow—from raw data acquisition and rigorous
 preprocessing to signal detection—empowering researchers to transform
 vast spontaneous reporting data into actionable clinical insights.
 
-<p align="center">
-
-<img src="man/figures/workflow.png" width="80%" alt="faers Analysis Workflow">
-</p>
+# <p align="center">
+# 
+# <img src="man/figures/workflow.png" width="80%" alt="faers Analysis Workflow">
+# </p>
 
 ## Key Features
 
@@ -67,13 +67,8 @@ You can install the development version of `faers` from
 [GitHub](https://github.com/WangLabCSU/faers) with:
 
 ``` r
-if (!requireNamespace("pak")) {
-    install.packages("pak",
-        repos = sprintf(
-            "https://r-lib.github.io/p/pak/devel/%s/%s/%s",
-            .Platform$pkgType, R.Version()$os, R.Version()$arch
-        )
-    )
+if (!requireNamespace("pak", quietly = TRUE)) {
+    install.packages("pak", repos = "https://r-lib.github.io/p/pak/stable")
 }
 pak::pkg_install("WangLabCSU/faers")
 ```

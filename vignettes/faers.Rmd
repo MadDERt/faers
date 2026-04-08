@@ -15,6 +15,7 @@ vignette: >
 ---
 
 <style>
+html { scroll-behavior: smooth; }
 h4.date, .date, #date {
     display: none !important;
     visibility: hidden !important;
@@ -54,9 +55,24 @@ h1, h2, h3, h4 {
     border-left: 8px solid #1a5276;
     margin-bottom: 30px;
 }
-.roadmap-card p {
-    font-size: 18px;     
-    color: #7f8c8d;    
+.roadmap-card {
+    background: #ffffff;
+    border: 1px solid #e1e4e8;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.roadmap-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+.roadmap-card a {
+    font-size: 22px;
+    font-weight: 700;
+    text-decoration: none;
+    color: #2980b9;
 }
 </style>
 
@@ -70,6 +86,17 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Installation {.unnumbered}
+
+To get started with the latest version of `faers`:
+
+```{r, eval=FALSE}
+# Official Bioconductor installation
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("faers")
+```
+
 ## Introduction {.unnumbered}
 <div class="intro-box">
 faers is a high-performance R package designed to bridge the gap between raw FDA Adverse Event Reporting System (FAERS) data and actionable clinical insights. By integrating advanced deduplication, standardized medical vocabularies, and robust statistical models, it ensures high-fidelity real-world evidence generation.
@@ -81,19 +108,35 @@ Modern pharmacovigilance demands both computational efficiency and medical rigor
 We provide modular documentation to support your research journey:
 
 <div class="roadmap-card">
-
-- 🚀[Full Workflow Tutorial](https://MadDERt.github.io/faers/articles/full-workflow.html){.unnumbered}
-The quintessential guide for most users. It covers the entire pipeline—from data ingestion to signal detection—using a clinical Insulin case study.
+### 🚀 [Full Workflow Tutorial](https://MadDERt.github.io/faers/articles/full-workflow.html)
+**The essential guide for most users.** Follow a complete clinical case study (Insulin) from raw data ingestion to disproportionality signal detection.
 </div>
 
 <div class="roadmap-card">
-
-- 🛠Function Reference
-Detailed technical documentation for every exported function. Access it directly within your R session:
-```{r, eval=FALSE}
-help(package = "faers")
-```
+### 📋 [Function Reference](https://MadDERt.github.io/faers/reference/index.html)
+**For technical deep-dives.**
+Detailed API documentation for every exported function, including parameter definitions and return values.
 </div>
+
+<div class="roadmap-card">
+### 📂 [Data Structures](https://MadDERt.github.io/faers/articles/faers.html#key-features)
+Understand how `faers` handles S4 objects and integrates with MedDRA/RxNorm hierarchies.
+</div>
+
+## Why `faers`? {.unnumbered}
+
+The following snippet demonstrates the clarity of the `faers` syntax:
+
+```{r, eval=FALSE}
+library(faers)
+
+# Download -> Standardize -> De-duplicate -> Signal Detection
+data <- faers(2023, "q1") %>% 
+  faers_standardize(meddra_path) %>% 
+  faers_dedup()
+
+results <- faers_phv_signal(data_filtered, .full = data)
+```
 
 ## Key Features {.unnumbered}
 
