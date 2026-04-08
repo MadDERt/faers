@@ -27,10 +27,7 @@ streamlines the entire workflow—from raw data acquisition and rigorous
 preprocessing to signal detection—empowering researchers to transform
 vast spontaneous reporting data into actionable clinical insights.
 
-# <p align="center">
-# 
-# <img src="man/figures/workflow.png" width="80%" alt="faers Analysis Workflow">
-# </p>
+
 
 ## Key Features
 
