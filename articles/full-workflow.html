@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">faers</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.5</span>
       </span>
     </div>
 
@@ -56,6 +56,9 @@
     </li>
     <li>
       <a href="../articles/full-workflow.html">Full Workflow Case Study</a>
+    </li>
+    <li>
+      <a href="https://bioconductor.org/packages/devel/bioc/manuals/faers/man/faers.pdf" class="external-link">Full Manual</a>
     </li>
   </ul>
 </li>
@@ -96,25 +99,35 @@
 <div class="section level2">
 <h2 id="pharmacovigilance-analysis-using-faers">Pharmacovigilance Analysis using FAERS<a class="anchor" aria-label="anchor" href="#pharmacovigilance-analysis-using-faers"></a>
 </h2>
-<p>FAERS is a database for the spontaneous reporting of adverse events
-and medication errors involving human drugs and therapeutic biological
-products. This package accelarate the process of Pharmacovigilance
-Analysis using FAERS.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/load_all.html" class="external-link">load_all</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Loading <span style="color: #0000BB;">faers</span></span></span></code></pre></div>
+<p>The FDA Adverse Event Reporting System (FAERS) is a cornerstone of
+post-market safety surveillance. However, its complex relational
+structure, data duplicates, and unstandardized terminology often hinder
+reproducible research.</p>
+<p>The faers package provides a modern, end-to-end framework designed to
+bridge the gap between raw spontaneous reporting data and actionable
+pharmacovigilance signals. This vignette demonstrates a complete
+workflow using Insulin as a case study, covering the following four core
+phases:</p>
+<ul>
+<li><p>Data Acquisition and Parsing: Seamlessly downloading and parsing
+quarterly ASCII/XML data.</p></li>
+<li><p>Clinical Terminology Standardization: Mapping drugs and adverse
+events to MedDRA and RxNorm hierarchies.</p></li>
+<li><p>Multi-level Deduplication Strategy: Advanced deduplication logic
+to ensure statistical integrity.</p></li>
+<li><p>Pharmacovigilance Signal Detection: Performing high-performance
+disproportionality analyses (ROR, PRR, BCPNN, EBGM).</p></li>
+</ul>
 <div class="section level3">
 <h3 id="check-metadata-of-faers">Check metadata of FAERS<a class="anchor" aria-label="anchor" href="#check-metadata-of-faers"></a>
 </h3>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">faers</span><span class="op">)</span></span></code></pre></div>
 <p>This will return a data.table reporting years, period, quarter, and
 file urls and file sizes. By default, this will use the cached file in
 <code>tools::R_user_dir("faers", "cache")</code>. If it doesn’t exist,
 the internal will parse metadata in <a href="https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html" class="external-link uri">https://fis.fda.gov/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html</a></p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/faers_meta.html">faers_meta</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>An metadata copy was associated with the package, just set
-<code>internal = TRUE</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/faers_meta.html">faers_meta</a></span><span class="op">(</span>internal <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,<span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; → Using internal FAERS metadata</span></span>
 <span><span class="co">#&gt;   Snapshot time: 2024-09-19 00:18:06.64623</span></span>
@@ -135,30 +148,67 @@ the internal will parse metadata in <a href="https://fis.fda.gov/extensions/FPD-
 <span><span class="co">#&gt; 3: https://fis.fda.gov/content/Exports/faers_xml_2023Q4.zip         140MB</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="download-and-parse-quarterly-data-files-from-faers">Download and Parse quarterly data files from FAERS<a class="anchor" aria-label="anchor" href="#download-and-parse-quarterly-data-files-from-faers"></a>
+<h3 id="data-acquisition-and-parsing">Data Acquisition and Parsing<a class="anchor" aria-label="anchor" href="#data-acquisition-and-parsing"></a>
 </h3>
 <p>The FAERS Quarterly Data files contain raw data extracted from the
 AERS database for the indicated time ranges. The quarterly data files,
 which are available in ASCII or SGML formats, include:</p>
-<ul>
-<li>
-<code>demo</code>: demographic and administrative information</li>
-<li>
-<code>drug</code>: drug information from the case reports</li>
-<li>
-<code>reac</code>: reaction information from the reports</li>
-<li>
-<code>outc</code>: patient outcome information from the reports</li>
-<li>
-<code>rpsr</code>: information on the source of the reports</li>
-<li>
-<code>ther</code>: drug therapy start dates and end dates for the
-reported drugs</li>
-<li>
-<code>indi</code>: contains all “Medical Dictionary for Regulatory
-Activities” (MedDRA) terms coded for the indications for use (diagnoses)
-for the reported drugs</li>
-</ul>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Field Name</th>
+<th align="left">Dataset Name</th>
+<th align="left">Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left"><strong><code>demo</code></strong></td>
+<td align="left">Demographic</td>
+<td align="left">Patient demographics, report sources, and
+administrative information.</td>
+</tr>
+<tr class="even">
+<td align="left"><strong><code>drug</code></strong></td>
+<td align="left">Drug</td>
+<td align="left">Drug information (names, dosage, routes) from the case
+reports.</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong><code>reac</code></strong></td>
+<td align="left">Reaction</td>
+<td align="left">Adverse event terms coded using MedDRA Preferred Terms
+(PT).</td>
+</tr>
+<tr class="even">
+<td align="left"><strong><code>outc</code></strong></td>
+<td align="left">Outcome</td>
+<td align="left">Patient outcomes (e.g., death, hospitalization,
+life-threatening).</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong><code>rpsr</code></strong></td>
+<td align="left">Report Source</td>
+<td align="left">Specific sources of the reports (e.g., physician,
+manufacturer).</td>
+</tr>
+<tr class="even">
+<td align="left"><strong><code>ther</code></strong></td>
+<td align="left">Therapy</td>
+<td align="left">Drug therapy start and end dates for the reported
+drugs.</td>
+</tr>
+<tr class="odd">
+<td align="left"><strong><code>indi</code></strong></td>
+<td align="left">Indication</td>
+<td align="left">MedDRA terms for the medical indications for which the
+drugs were used.</td>
+</tr>
+</tbody>
+</table>
 <p>Generally, we can use <code><a href="../reference/faers.html">faers()</a></code> function to download and
 parse all quarterly data files from FAERS. Internally, the
 <code><a href="../reference/faers.html">faers()</a></code> function seamlessly utilizes
@@ -170,7 +220,7 @@ presently, the XML file receives only minimal support in the following
 process.)</p>
 <p>Some variables has been added into specific field. See
 <code><a href="../reference/faers_parse.html">?faers_parse</a></code> for details.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Please make sure to replace dir with your own directory path, as the file</span></span>
 <span><span class="co"># included in the package is a sampled version.</span></span>
 <span><span class="va">data1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/faers.html">faers</a></span><span class="op">(</span><span class="fl">2004</span>, <span class="st">"q1"</span>,</span>
@@ -184,7 +234,7 @@ process.)</p>
 <p>Furthermore, in cases where multiple quarterly data files are
 requisite, the <code><a href="../reference/faers_combine.html">faers_combine()</a></code> function is judiciously
 employed.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/faers.html">faers</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2004</span>, <span class="fl">2017</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"q1"</span>, <span class="st">"q2"</span><span class="op">)</span>,</span>
 <span>    dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, package <span class="op">=</span> <span class="st">"faers"</span><span class="op">)</span>,</span>
 <span>    compress_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -197,7 +247,7 @@ employed.</p>
 <span><span class="co">#&gt;   Total reports: 200 (with duplicates)</span></span></code></pre></div>
 <p>You can use <code><a href="../reference/FAERS-methods.html">faers_get()</a></code> to get specific field data, a
 data.table will be returned.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/FAERS-methods.html">faers_get</a></span><span class="op">(</span><span class="va">data2</span>, <span class="st">"demo"</span><span class="op">)</span>,<span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     year quarter primaryid  caseid i_f_code foll_seq     image event_dt</span></span>
 <span><span class="co">#&gt;    &lt;int&gt;  &lt;char&gt;    &lt;char&gt;  &lt;char&gt;   &lt;char&gt;    &lt;int&gt;    &lt;char&gt;    &lt;int&gt;</span></span>
@@ -231,23 +281,23 @@ data.table will be returned.</p>
 <span><span class="co">#&gt; 3:             &lt;NA&gt;         &lt;NA&gt;</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="standardize-and-de-duplication">Standardize and De-duplication<a class="anchor" aria-label="anchor" href="#standardize-and-de-duplication"></a>
+<h3 id="clinical-terminology-standardization">Clinical Terminology Standardization<a class="anchor" aria-label="anchor" href="#clinical-terminology-standardization"></a>
 </h3>
-<p>The <code>reac</code> file provides the adverse drug reactions, where
-it includes the “P.T.” field or the “Preferred Term” level terminology
-from the Medical Dictionary for Regulatory Activities (MedDRA). The
-<code>indi</code> file contains the drug indications, which also uses
-the “P.T.” level of MedDRA as a descriptor for the drug indication. In
-this way, <code>MedDRA</code> was necessary to standardize this field
-and add additional informations, such as
-<code>System Organ Classes</code>.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># you must replace `meddra_path` with the path of uncompressed meddra data</span></span>
+<p>The reac (reactions) and indi (indications) files in FAERS use
+Preferred Terms (PT) from the Medical Dictionary for Regulatory
+Activities (MedDRA). Standardizing these fields is crucial to map raw
+terms to their broader clinical categories, such as System Organ Classes
+(SOC).</p>
+<p>Use the faers_standardize() function to integrate your local MedDRA
+dictionary:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Replace `meddra_path` with the path to your uncompressed MedDRA data</span></span>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/faers_standardize.html">faers_standardize</a></span><span class="op">(</span><span class="va">data2</span>, <span class="va">meddra_path</span><span class="op">)</span></span></code></pre></div>
-<p>To proceed following steps, we just read a standardized data.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>For this demonstration, we will load a pre-standardized dataset
+included in the package:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"standardized_data.rds"</span>, package <span class="op">=</span> <span class="st">"faers"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">data</span>,<span class="fl">3</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">data</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $demo</span></span>
 <span><span class="co">#&gt;       year quarter primaryid   caseid i_f_code foll_seq     image event_dt</span></span>
 <span><span class="co">#&gt;      &lt;int&gt;  &lt;char&gt;    &lt;char&gt;   &lt;char&gt;   &lt;char&gt;    &lt;int&gt;    &lt;char&gt;    &lt;int&gt;</span></span>
@@ -327,14 +377,13 @@ and add additional informations, such as
 <span><span class="co">#&gt; 198:       E               US           US</span></span>
 <span><span class="co">#&gt; 199:    &lt;NA&gt;               US           US</span></span>
 <span><span class="co">#&gt; 200:    &lt;NA&gt;               US           US</span></span></code></pre></div>
-<p>The internal will save the complete MedDRA data in the
-<code>@meddra</code> slot, MedDRA consists of two components: hierarchy
-and SMQ data. We can specify these components using the use
-argument.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/FAERS-class.html">faers_meddra</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Hierarchy data for MedDRA (version 26.1)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/FAERS-class.html">faers_meddra</a></span><span class="op">(</span><span class="va">data</span>, use <span class="op">=</span> <span class="st">"hierarchy"</span><span class="op">)</span>,<span class="fl">3</span><span class="op">)</span></span>
+<p>The standardized FAERSascii object stores complete MedDRA information
+in the <span class="citation">@meddra</span> slot. This includes both
+hierarchy and Standardised MedDRA Queries (SMQ) data.</p>
+<p>You can access these components using faers_meddra():</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Retrieve MedDRA hierarchy index</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/FAERS-class.html">faers_meddra</a></span><span class="op">(</span><span class="va">data</span>, use <span class="op">=</span> <span class="st">"hierarchy"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    llt_code                       llt_name  pt_code</span></span>
 <span><span class="co">#&gt;       &lt;int&gt;                         &lt;char&gt;    &lt;int&gt;</span></span>
 <span><span class="co">#&gt; 1: 10000001      "Ventilation" pneumonitis 10081988</span></span>
@@ -360,61 +409,12 @@ argument.</p>
 <span><span class="co">#&gt; 1: Respiratory, thoracic and mediastinal disorders       Resp              Y</span></span>
 <span><span class="co">#&gt; 2:      Congenital, familial and genetic disorders       Cong              Y</span></span>
 <span><span class="co">#&gt; 3:                                  Investigations        Inv              Y</span></span></code></pre></div>
-<p>The internal will include a <code>meddra_hierarchy_idx</code> column
-that represents the index of the MedDRA hierarchy data in the
-<code>indi</code> and <code>reac</code> field when standardized.
-Additionally, the columns <code>meddra_hierarchy_from</code>,
-<code>meddra_code</code>, and <code>meddra_pt</code> will also be added
-which provide standardized names of the original PT (indi: indi_pt;
-reac: pt) (refer to <code>ASC_NTS.pdf</code> or
-<code>ASC_NTS.docx</code> in the FAERS quarterly file for the meanings
-of the original names, most original names will remain unchanged except
-for some names different between FAERS quarterly files, see
-<code><a href="../reference/faers_parse.html">?faers_parse</a></code> for details). We can retrieve this data using
-the <code><a href="../reference/FAERS-class.html">faers_meddra()</a></code> function. When we use
-<code><a href="../reference/FAERS-methods.html">faers_get()</a></code> to retrieve <code>indi</code> or
-<code>reac</code> data from the standardized <code>FAERSascii</code>
-object, the meddra hierarchy columns are automatically added to the
-returned data.table.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/FAERS-methods.html">faers_get</a></span><span class="op">(</span><span class="va">data</span>, <span class="st">"indi"</span><span class="op">)</span>,<span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt;     year quarter primaryid indi_drug_seq</span></span>
-<span><span class="co">#&gt;    &lt;int&gt;  &lt;char&gt;    &lt;char&gt;         &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1:  2004      q1   4263927    1004493661</span></span>
-<span><span class="co">#&gt; 2:  2004      q1   4264001    1004493811</span></span>
-<span><span class="co">#&gt; 3:  2004      q1   4264001    1004520441</span></span>
-<span><span class="co">#&gt;                                    indi_pt caseid meddra_hierarchy_from</span></span>
-<span><span class="co">#&gt;                                     &lt;char&gt; &lt;char&gt;                &lt;char&gt;</span></span>
-<span><span class="co">#&gt; 1: DIABETES MELLITUS NON-INSULIN-DEPENDENT   &lt;NA&gt;                   llt</span></span>
-<span><span class="co">#&gt; 2:                    RHEUMATOID ARTHRITIS   &lt;NA&gt;                   llt</span></span>
-<span><span class="co">#&gt; 3:                    RHEUMATOID ARTHRITIS   &lt;NA&gt;                   llt</span></span>
-<span><span class="co">#&gt;    meddra_code                               meddra_pt llt_code</span></span>
-<span><span class="co">#&gt;         &lt;char&gt;                                  &lt;char&gt;    &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1:    10012613 Diabetes mellitus non-insulin-dependent 10012613</span></span>
-<span><span class="co">#&gt; 2:    10039073                    Rheumatoid arthritis 10039073</span></span>
-<span><span class="co">#&gt; 3:    10039073                    Rheumatoid arthritis 10039073</span></span>
-<span><span class="co">#&gt;                                   llt_name  pt_code                  pt_name</span></span>
-<span><span class="co">#&gt;                                     &lt;char&gt;    &lt;int&gt;                   &lt;char&gt;</span></span>
-<span><span class="co">#&gt; 1: Diabetes mellitus non-insulin-dependent 10067585 Type 2 diabetes mellitus</span></span>
-<span><span class="co">#&gt; 2:                    Rheumatoid arthritis 10039073     Rheumatoid arthritis</span></span>
-<span><span class="co">#&gt; 3:                    Rheumatoid arthritis 10039073     Rheumatoid arthritis</span></span>
-<span><span class="co">#&gt;    hlt_code                          hlt_name hlgt_code</span></span>
-<span><span class="co">#&gt;       &lt;int&gt;                            &lt;char&gt;     &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1: 10012602 Diabetes mellitus (incl subtypes)  10018424</span></span>
-<span><span class="co">#&gt; 2: 10039078          Rheumatoid arthropathies  10023213</span></span>
-<span><span class="co">#&gt; 3: 10039078          Rheumatoid arthropathies  10023213</span></span>
-<span><span class="co">#&gt;                                                hlgt_name soc_code</span></span>
-<span><span class="co">#&gt;                                                   &lt;char&gt;    &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1: Glucose metabolism disorders (incl diabetes mellitus) 10027433</span></span>
-<span><span class="co">#&gt; 2:                                       Joint disorders 10028395</span></span>
-<span><span class="co">#&gt; 3:                                       Joint disorders 10028395</span></span>
-<span><span class="co">#&gt;                                           soc_name soc_abbrev primary_soc_fg</span></span>
-<span><span class="co">#&gt;                                             &lt;char&gt;     &lt;char&gt;         &lt;char&gt;</span></span>
-<span><span class="co">#&gt; 1:              Metabolism and nutrition disorders      Metab              Y</span></span>
-<span><span class="co">#&gt; 2: Musculoskeletal and connective tissue disorders       Musc              Y</span></span>
-<span><span class="co">#&gt; 3: Musculoskeletal and connective tissue disorders       Musc              Y</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/FAERS-methods.html">faers_get</a></span><span class="op">(</span><span class="va">data</span>, <span class="st">"reac"</span><span class="op">)</span>,<span class="fl">3</span><span class="op">)</span></span>
+<p>Standardization adds several key columns to the indi and reac fields,
+such as meddra_hierarchy_idx, meddra_code, and meddra_pt. When you use
+faers_get(), these standardized columns are automatically merged:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Standardized columns are joined automatically</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/FAERS-methods.html">faers_get</a></span><span class="op">(</span><span class="va">data</span>, <span class="st">"reac"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     year quarter primaryid                                   pt     v3 caseid</span></span>
 <span><span class="co">#&gt;    &lt;int&gt;  &lt;char&gt;    &lt;char&gt;                               &lt;char&gt; &lt;lgcl&gt; &lt;char&gt;</span></span>
 <span><span class="co">#&gt; 1:  2004      q1   4263764             BLOOD PRESSURE INCREASED     NA   &lt;NA&gt;</span></span>
@@ -455,14 +455,23 @@ returned data.table.</p>
 <span><span class="co">#&gt; 1:                     Investigations        Inv              Y</span></span>
 <span><span class="co">#&gt; 2: Metabolism and nutrition disorders      Metab              Y</span></span>
 <span><span class="co">#&gt; 3:                 Vascular disorders       Vasc              Y</span></span></code></pre></div>
-<p>One limitation of FAERS database is duplicate and incomplete reports.
-There are many instances of duplicative reports and some reports do not
-contain all the necessary information. We deemed two cases to be
-identical if they exhibited a full concordance across drugs
-administered, and adverse reactions and but showed discrepancies in one
-or none of the following fields: gender, age, reporting country, event
-date, start date, and drug indications.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+</div>
+<div class="section level3">
+<h3 id="multi-level-deduplication-strategy">Multi-level Deduplication Strategy<a class="anchor" aria-label="anchor" href="#multi-level-deduplication-strategy"></a>
+</h3>
+<p>A significant limitation of the FAERS database is the presence of
+duplicate or incomplete reports. Multiple submissions for the same case
+(e.g., updates from a manufacturer) can bias statistical signals if not
+handled correctly.</p>
+<p>In faers, two cases are considered identical if they show full
+concordance across:</p>
+<p>Administered drugs</p>
+<p>Adverse reactions</p>
+<p>Discrepancies are permitted in only one (or none) of the following
+secondary fields: gender, age, country, event date, start date, or
+indications.</p>
+<p>Run the faers_dedup() function to clean your dataset:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/faers_dedup.html">faers_dedup</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span>
 <span><span class="co">#&gt; → deduplication from the same source by retain the most recent report</span></span>
 <span><span class="co">#&gt; → merging `drug`, `indi`, `ther`, and `reac` data</span></span>
@@ -472,74 +481,67 @@ date, start date, and drug indications.</p>
 <span><span class="co">#&gt;   Total unique reports: 200</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="pharmacovigilance-analysis">Pharmacovigilance analysis<a class="anchor" aria-label="anchor" href="#pharmacovigilance-analysis"></a>
+<h3 id="pharmacovigilance-signal-detection">Pharmacovigilance Signal Detection<a class="anchor" aria-label="anchor" href="#pharmacovigilance-signal-detection"></a>
 </h3>
-<p>Pharmacovigilance is the science and activities relating to the
-detection, assessment, understanding and prevention of adverse effects
-or any other medicine/vaccine related problem.</p>
-<p>To mine the signals of “insulin”, we start by using the
-<code><a href="../reference/FAERS-methods.html">faers_filter()</a></code> function. In this function, the
-<code>.fn</code> argument should be a function that accepts data
-specified in <code>.field</code>. It is important to note that
-<code>.fn</code> should always return the <code>primaryid</code> that
-you want to keep.</p>
-<p>To enhance our analysis, it would be advantageous to include all drug
-synonym names for <code>insulin</code>. These synonyms can be obtained
-by querying sources such as <a href="https://go.drugbank.com/" class="external-link uri">https://go.drugbank.com/</a> or alternative databases.
-Furthermore, we extract the brand names of insulin from the <a href="https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files" class="external-link">Drugs@FDA</a>
-dataset, which can be easily obtained using the <code><a href="../reference/fda_drugs.html">fda_drugs()</a></code>
-function.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">insulin_names</span> <span class="op">&lt;-</span> <span class="st">"insulin"</span></span>
+<p>Pharmacovigilance focuses on the science and activities relating to
+the detection, assessment, and prevention of adverse effects. In this
+section, we transition from data preprocessing to Signal Mining using
+disproportionality analysis.</p>
+<ol style="list-style-type: decimal">
+<li>Target Drug Filtering &amp; Standardization To perform a precise
+analysis for “Insulin,” we must account for the inconsistency of drug
+naming in FAERS (e.g., brand names vs. generic names). We leverage
+fda_drugs() to retrieve standardized synonyms from the FDA database and
+then use faers_filter() to isolate relevant reports.</li>
+</ol>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Step 1: Define the target drug and fetch synonyms from Drugs@FDA</span></span>
+<span><span class="va">insulin_names</span> <span class="op">&lt;-</span> <span class="st">"insulin"</span></span>
 <span><span class="va">insulin_pattern</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">insulin_names</span>, collapse <span class="op">=</span> <span class="st">"|"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># This queries the official FDA drug database</span></span>
 <span><span class="va">fda_insulin</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fda_drugs.html">fda_drugs</a></span><span class="op">(</span><span class="op">)</span><span class="op">[</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="va">insulin_pattern</span>, <span class="va">ActiveIngredient</span>, ignore.case <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="op">]</span></span>
-<span><span class="co">#&gt; → Reading html:</span></span>
-<span><span class="co">#&gt;   <span style="color: #0000BB; font-style: italic;">&lt;https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files&gt;</span></span></span>
-<span><span class="co">#&gt; Drugs@FDA Download File</span></span>
-<span><span class="co">#&gt; Downloading 1 file from:</span></span>
-<span><span class="co">#&gt; <span style="color: #0000BB; font-style: italic;">&lt;https://www.fda.gov/media/89850/download?attachment&gt;</span></span></span>
+<span><span class="op">]</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Step 2: Create a robust regex pattern including all identified brand names</span></span>
 <span><span class="va">insulin_pattern</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">tolower</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">insulin_names</span>, <span class="va">fda_insulin</span><span class="op">$</span><span class="va">DrugName</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    collapse <span class="op">=</span> <span class="st">"|"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">insulin_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FAERS-methods.html">faers_filter</a></span><span class="op">(</span><span class="va">data</span>, .fn <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
+<span></span>
+<span><span class="co"># Step 3: Filter the deduplicated dataset</span></span>
+<span><span class="co"># We search in both 'drugname' and 'prod_ai' fields for maximum coverage</span></span>
+<span><span class="va">insulin_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/FAERS-methods.html">faers_filter</a></span><span class="op">(</span><span class="va">data</span>, .field <span class="op">=</span> <span class="st">"drug"</span>, .fn <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="va">insulin_pattern</span>, <span class="va">x</span><span class="op">$</span><span class="va">drugname</span>, ignore.case <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|</span></span>
-<span>        <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="va">insulin_pattern</span>, <span class="va">x</span><span class="op">$</span><span class="va">prod_ai</span>, ignore.case <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span>           <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="va">insulin_pattern</span>, <span class="va">x</span><span class="op">$</span><span class="va">prod_ai</span>, ignore.case <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span>    <span class="va">x</span><span class="op">[</span><span class="va">idx</span>, <span class="va">primaryid</span><span class="op">]</span></span>
-<span><span class="op">}</span>, .field <span class="op">=</span> <span class="st">"drug"</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="va">insulin_data</span></span>
 <span><span class="co">#&gt; Standardized and De-duplicated FAERS data from 2 Quarterly ascii files</span></span>
 <span><span class="co">#&gt;   Total unique reports: 9</span></span></code></pre></div>
-<p>Then, signal can be easily obtained with
-<code><a href="../reference/faers_phv_signal.html">faers_phv_signal()</a></code> which internally use
-<code><a href="../reference/faers_phv_signal.html">faers_phv_table()</a></code> to create a contingency table and use
-<code><a href="../reference/phv_signal.html">phv_signal()</a></code> to do signal analysis specified in
-<code>.methods</code> argument. By default, all supported signal
-analysis methods will be run, including “ror”, “prr”, “chisq”,
-“bcpnn_norm”, “bcpnn_mcmc”, “obsexp_shrink”, “fisher”, and “ebgm”.</p>
-<p>The most important argument for this function is
-<code>.object</code>, which should be a de-duplicated FAERSascii object
-containing the data for the drugs or traits of interest. Additionally,
-you must specify either <code>.full</code>, which represents the
-background distributions data (usually the entire FAERS data), or you
-can specify <code>.object2</code>, which should be the control data or
-another drug of interest for comparison.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">insulin_signals</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/faers_phv_signal.html">faers_phv_signal</a></span><span class="op">(</span><span class="va">insulin_data</span>,</span>
+<ol start="2" style="list-style-type: decimal">
+<li>Disproportionality Analysis (Signal Mining)The faers_phv_signal()
+function is the core engine for signal detection. It automatically
+constructs contingency tables and calculates a comprehensive suite of
+statistical indices:Frequentist Methods: ROR (Reporting Odds Ratio), PRR
+(Proportional Reporting Ratio), and Chi-square .Bayesian Methods: BCPNN
+(Information Component) and EBGM (Empirical Bayes Geometric
+Mean).Crucial Concept: To calculate these scores, you must specify the
+.full argument, which represents the background distribution (typically
+the entire deduplicated FAERS dataset) used for comparison.</li>
+</ol>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Perform signal detection using all supported methods</span></span>
+<span><span class="co"># BiocParallel is used here to ensure memory-efficient processing</span></span>
+<span><span class="va">insulin_signals</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/faers_phv_signal.html">faers_phv_signal</a></span><span class="op">(</span></span>
+<span>    <span class="va">insulin_data</span>,</span>
 <span>    .full <span class="op">=</span> <span class="va">data</span>,</span>
 <span>    BPPARAM <span class="op">=</span> <span class="fu">BiocParallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocParallel/man/SerialParam-class.html" class="external-link">SerialParam</a></span><span class="op">(</span>RNGseed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_ror()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_prr()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_chisq()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_bcpnn_norm()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_bcpnn_mcmc()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_obsexp_shrink()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_fisher()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_ebgm()`</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">insulin_signals</span>,<span class="fl">3</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Display top signals at the default level (System Organ Class - SOC)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">insulin_signals</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Key: &lt;soc_name&gt;</span></span>
 <span><span class="co">#&gt;                                      soc_name     a     b     c     d expected</span></span>
 <span><span class="co">#&gt;                                        &lt;char&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;num&gt;</span></span>
@@ -571,26 +573,22 @@ another drug of interest for comparison.</p>
 <span><span class="co">#&gt; 1:           19.93923     0.4054350 1.395816        0.91         2.05</span></span>
 <span><span class="co">#&gt; 2:           21.37723     0.1552616 1.435648        0.95         2.09</span></span>
 <span><span class="co">#&gt; 3:          817.11230     1.0000000 1.373343        0.89         2.03</span></span></code></pre></div>
-<p>The column containing the events of interest can be specified using
-an atomic character in the <code>.events</code> (default: “soc_name”)
-argument. The combination of all specified columns will define the
-unique event. Additionally, we can control which field data to find the
-columns in the <code>.field</code> (default: “reac”) argument.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">insulin_signals_hlgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/faers_phv_signal.html">faers_phv_signal</a></span><span class="op">(</span></span>
+<ol start="3" style="list-style-type: decimal">
+<li>Multi-level Event Analysis While the default analysis occurs at the
+SOC (System Organ Class) level, faers allows you to explore signals at
+different granularities of the MedDRA hierarchy, such as HLGT
+(High-Level Group Term) or PT (Preferred Term).</li>
+</ol>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Refine the analysis to the HLGT level by adjusting the .events argument</span></span>
+<span><span class="va">insulin_signals_hlgt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/faers_phv_signal.html">faers_phv_signal</a></span><span class="op">(</span></span>
 <span>    <span class="va">insulin_data</span>,</span>
-<span>    .events <span class="op">=</span> <span class="st">"hlgt_name"</span>, .full <span class="op">=</span> <span class="va">data</span>,</span>
+<span>    .events <span class="op">=</span> <span class="st">"hlgt_name"</span>, </span>
+<span>    .full <span class="op">=</span> <span class="va">data</span>,</span>
 <span>    BPPARAM <span class="op">=</span> <span class="fu">BiocParallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/BiocParallel/man/SerialParam-class.html" class="external-link">SerialParam</a></span><span class="op">(</span>RNGseed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_ror()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_prr()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_chisq()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_bcpnn_norm()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_bcpnn_mcmc()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_obsexp_shrink()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_fisher()`</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Running `phv_ebgm()`</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">insulin_signals_hlgt</span>,<span class="fl">3</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">insulin_signals_hlgt</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Key: &lt;hlgt_name&gt;</span></span>
 <span><span class="co">#&gt;                        hlgt_name     a     b     c     d expected   ror</span></span>
 <span><span class="co">#&gt;                           &lt;char&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;    &lt;num&gt; &lt;num&gt;</span></span>
@@ -627,7 +625,7 @@ columns in the <code>.field</code> (default: “reac”) argument.</p>
 <div class="section level2">
 <h2 id="sessioninfo">sessionInfo<a class="anchor" aria-label="anchor" href="#sessioninfo"></a>
 </h2>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
@@ -652,37 +650,29 @@ columns in the <code>.field</code> (default: “reac”) argument.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] faers_1.5.4    testthat_3.2.3</span></span>
+<span><span class="co">#&gt; [1] faers_1.5.4</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] gtable_0.3.6        xfun_0.55           bslib_0.10.0       </span></span>
-<span><span class="co">#&gt;  [4] ggplot2_4.0.0       httr2_1.2.1         htmlwidgets_1.6.4  </span></span>
-<span><span class="co">#&gt;  [7] devtools_2.4.6      remotes_2.5.0       lattice_0.22-7     </span></span>
-<span><span class="co">#&gt; [10] tzdb_0.5.0          vctrs_0.6.5         tools_4.5.1        </span></span>
-<span><span class="co">#&gt; [13] generics_0.1.4      curl_7.0.0          parallel_4.5.1     </span></span>
-<span><span class="co">#&gt; [16] tibble_3.3.0        pkgconfig_2.0.3     Matrix_1.7-3       </span></span>
-<span><span class="co">#&gt; [19] data.table_1.17.8   RColorBrewer_1.1-3  S7_0.2.0           </span></span>
-<span><span class="co">#&gt; [22] desc_1.4.3          lifecycle_1.0.4     stringr_1.6.0      </span></span>
-<span><span class="co">#&gt; [25] compiler_4.5.1      farver_2.1.2        MatrixModels_0.5-4 </span></span>
-<span><span class="co">#&gt; [28] textshaping_1.0.4   mcmc_0.9-8          brio_1.1.5         </span></span>
-<span><span class="co">#&gt; [31] codetools_0.2-20    SparseM_1.84-2      quantreg_6.1       </span></span>
-<span><span class="co">#&gt; [34] htmltools_0.5.9     usethis_3.2.1       sass_0.4.10        </span></span>
-<span><span class="co">#&gt; [37] yaml_2.3.12         crayon_1.5.3        pkgdown_2.1.3      </span></span>
-<span><span class="co">#&gt; [40] pillar_1.11.1       jquerylib_0.1.4     MASS_7.3-65        </span></span>
-<span><span class="co">#&gt; [43] ellipsis_0.3.2      BiocParallel_1.42.2 cachem_1.1.0       </span></span>
-<span><span class="co">#&gt; [46] sessioninfo_1.2.3   rvest_1.0.5         tidyselect_1.2.1   </span></span>
-<span><span class="co">#&gt; [49] digest_0.6.39       stringi_1.8.7       dplyr_1.1.4        </span></span>
-<span><span class="co">#&gt; [52] purrr_1.2.1         splines_4.5.1       rprojroot_2.1.1    </span></span>
-<span><span class="co">#&gt; [55] fastmap_1.2.0       grid_4.5.1          cli_3.6.5          </span></span>
-<span><span class="co">#&gt; [58] magrittr_2.0.4      survival_3.8-3      pkgbuild_1.4.8     </span></span>
-<span><span class="co">#&gt; [61] openEBGM_0.9.1      scales_1.4.0        rappdirs_0.3.4     </span></span>
-<span><span class="co">#&gt; [64] bit64_4.6.0-1       httr_1.4.7          rmarkdown_2.30     </span></span>
-<span><span class="co">#&gt; [67] bit_4.6.0           ragg_1.5.0          coda_0.19-4.1      </span></span>
-<span><span class="co">#&gt; [70] memoise_2.0.1       evaluate_1.0.5      knitr_1.51         </span></span>
-<span><span class="co">#&gt; [73] rlang_1.1.6         MCMCpack_1.7-1      glue_1.8.0         </span></span>
-<span><span class="co">#&gt; [76] selectr_0.4-2       xml2_1.5.2          pkgload_1.5.0      </span></span>
-<span><span class="co">#&gt; [79] vroom_1.6.6         rstudioapi_0.17.1   jsonlite_2.0.0     </span></span>
-<span><span class="co">#&gt; [82] R6_2.6.1            systemfonts_1.3.1   fs_1.6.7</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] sass_0.4.10         generics_0.1.4      openEBGM_0.9.1     </span></span>
+<span><span class="co">#&gt;  [4] lattice_0.22-7      digest_0.6.39       magrittr_2.0.4     </span></span>
+<span><span class="co">#&gt;  [7] evaluate_1.0.5      grid_4.5.1          RColorBrewer_1.1-3 </span></span>
+<span><span class="co">#&gt; [10] MCMCpack_1.7-1      fastmap_1.2.0       jsonlite_2.0.0     </span></span>
+<span><span class="co">#&gt; [13] Matrix_1.7-3        survival_3.8-3      mcmc_0.9-8         </span></span>
+<span><span class="co">#&gt; [16] scales_1.4.0        codetools_0.2-20    textshaping_1.0.4  </span></span>
+<span><span class="co">#&gt; [19] jquerylib_0.1.4     cli_3.6.5           rlang_1.1.6        </span></span>
+<span><span class="co">#&gt; [22] splines_4.5.1       cachem_1.1.0        yaml_2.3.12        </span></span>
+<span><span class="co">#&gt; [25] tools_4.5.1         parallel_4.5.1      SparseM_1.84-2     </span></span>
+<span><span class="co">#&gt; [28] BiocParallel_1.42.2 MatrixModels_0.5-4  coda_0.19-4.1      </span></span>
+<span><span class="co">#&gt; [31] dplyr_1.1.4         ggplot2_4.0.0       vctrs_0.6.5        </span></span>
+<span><span class="co">#&gt; [34] R6_2.6.1            lifecycle_1.0.4     fs_1.6.7           </span></span>
+<span><span class="co">#&gt; [37] htmlwidgets_1.6.4   MASS_7.3-65         ragg_1.5.0         </span></span>
+<span><span class="co">#&gt; [40] pkgconfig_2.0.3     desc_1.4.3          pkgdown_2.1.3      </span></span>
+<span><span class="co">#&gt; [43] bslib_0.10.0        pillar_1.11.1       gtable_0.3.6       </span></span>
+<span><span class="co">#&gt; [46] data.table_1.17.8   glue_1.8.0          systemfonts_1.3.1  </span></span>
+<span><span class="co">#&gt; [49] tidyselect_1.2.1    xfun_0.55           tibble_3.3.0       </span></span>
+<span><span class="co">#&gt; [52] rstudioapi_0.17.1   knitr_1.51          farver_2.1.2       </span></span>
+<span><span class="co">#&gt; [55] htmltools_0.5.9     rmarkdown_2.30      compiler_4.5.1     </span></span>
+<span><span class="co">#&gt; [58] quantreg_6.1        S7_0.2.0</span></span></code></pre></div>
 </div>
   </div>
 

@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">faers</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.5.5</span>
       </span>
     </div>
 
@@ -57,6 +57,9 @@
     </li>
     <li>
       <a href="articles/full-workflow.html">Full Workflow Case Study</a>
+    </li>
+    <li>
+      <a href="https://bioconductor.org/packages/devel/bioc/manuals/faers/man/faers.pdf" class="external-link">Full Manual</a>
     </li>
   </ul>
 </li>
@@ -90,8 +93,6 @@
 
 <p>Modern biologics, such as immune checkpoint inhibitors, exhibit complex toxicity profiles that are often underrepresented in pre-market clinical trials. While the FAERS database serves as a critical resource for real-world safety surveillance, its intricate relational structure and data inconsistencies pose significant barriers to large-scale epidemiological analyses.</p>
 <p>To address these challenges, we developed <code>faers</code>, an end-to-end, reproducible framework for precision pharmacovigilance. The package streamlines the entire workflow—from raw data acquisition and rigorous preprocessing to signal detection—empowering researchers to transform vast spontaneous reporting data into actionable clinical insights.</p>
-<p align="center">
-<img src="reference/figures/workflow.png" width="80%" alt="faers Analysis Workflow"></p>
 <div class="section level2">
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
@@ -115,13 +116,8 @@
 <span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"faers"</span><span class="op">)</span></span></code></pre></div>
 <p>You can install the development version of <code>faers</code> from <a href="https://github.com/WangLabCSU/faers" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"pak"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pak"</span>,</span>
-<span>        repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span></span>
-<span>            <span class="st">"https://r-lib.github.io/p/pak/devel/%s/%s/%s"</span>,</span>
-<span>            <span class="va">.Platform</span><span class="op">$</span><span class="va">pkgType</span>, <span class="fu"><a href="https://rdrr.io/r/base/Version.html" class="external-link">R.Version</a></span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">os</span>, <span class="fu"><a href="https://rdrr.io/r/base/Version.html" class="external-link">R.Version</a></span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">arch</span></span>
-<span>        <span class="op">)</span></span>
-<span>    <span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"pak"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pak"</span>, repos <span class="op">=</span> <span class="st">"https://r-lib.github.io/p/pak/stable"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pkg_install</a></span><span class="op">(</span><span class="st">"WangLabCSU/faers"</span><span class="op">)</span></span></code></pre></div>
 </div>
