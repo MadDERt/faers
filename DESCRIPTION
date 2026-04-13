@@ -33,7 +33,6 @@ Suggests:
     BiocStyle,
     countrycode,
     knitr,
-    pak,
     rmarkdown,
     testthat (>= 3.0.0)
 biocViews: Software, DataImport, BiomedicalInformatics, Pharmacogenomics, Pharmacogenomics
