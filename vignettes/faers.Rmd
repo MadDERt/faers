@@ -1,39 +1,165 @@
 ---
-title: "fears: Pharmacovigilance"
+title: "faers: End-to-End Precision Pharmacovigilance Framework"
 output: 
-  BiocStyle::html_document: 
+  BiocStyle::html_document:
     toc: true
+    toc_float: true
+    number_sections: false
+    theme: flatly
+    highlight: pygments
+    css: !expr "NULL"
 vignette: >
-  %\VignetteIndexEntry{FAERS-Pharmacovigilance}
+  %\VignetteIndexEntry{faers-portal}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-knit: (function(input, ...) {
-    rmarkdown::render(
-      input,
-      output_format = "github_document",
-      output_file = "README.md",
-      output_dir = getwd()
-    )
-  })
 ---
+
+<style>
+html { scroll-behavior: smooth; }
+h4.date, .date, #date {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+body {
+    font-family: "Optima", "Candara", "Segoe UI", sans-serif;
+    font-size: 20px;
+    line-height: 1.5;
+    color: #333333;
+}
+
+h1.title {
+    text-align: center !important;
+    color: #c0392b;
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 0.5em;
+}
+
+h1, h2, h3, h4 {
+    text-align: left; 
+    font-size: 26px;
+    color: #1a5276;
+    font-weight: 700;
+    margin-top: 40px;
+    margin-bottom: 20px;
+}
+.intro-box {
+    background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    padding: 25px;
+    font-size: 18px
+    border-radius: 15px;
+     color: #7f8c8d;
+    border-left: 8px solid #1a5276;
+    margin-bottom: 30px;
+}
+.roadmap-card {
+    background: #ffffff;
+    border: 1px solid #e1e4e8;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.roadmap-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+}
+.roadmap-card a {
+    font-size: 22px;
+    font-weight: 700;
+    text-decoration: none;
+    color: #2980b9;
+}
+</style>
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
     collapse = TRUE,
     comment = "#>",
-    fig.path = "man/figures/README-",
-    out.width = "100%"
+    out.width = "100%",
+    warning = FALSE,
+    message = FALSE
 )
 ```
 
-# Vignette
+## Installation {.unnumbered}
 
-Please go to <https://github.com/WangLabCSU/faers> for the full vignette.
+To get started with the latest version of `faers`:
 
-# Need helps?
+```{r, eval=FALSE}
+# Official Bioconductor installation
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("faers")
+```
 
-If you encounter questions or issues, please provide a reproducible example and
-post it on the [GitHub issue tracker](https://github.com/WangLabCSU/faers/issues). 
-For general questions, you may also post on the 
-[Bioconductor support site](https://support.bioconductor.org/) and tag your post
-with *faers*.
+## Introduction {.unnumbered}
+<div class="intro-box">
+faers is a high-performance R package designed to bridge the gap between raw FDA Adverse Event Reporting System (FAERS) data and actionable clinical insights. By integrating advanced deduplication, standardized medical vocabularies, and robust statistical models, it ensures high-fidelity real-world evidence generation.
+
+Modern pharmacovigilance demands both computational efficiency and medical rigor. faers addresses these needs through a streamlined pipeline that supports large-scale epidemiological studies and precision safety surveillance.
+</div>
+
+## Documentation Roadmap {.unnumbered}
+We provide modular documentation to support your research journey:
+
+<div class="roadmap-card">
+### 🚀 [Full Workflow Tutorial](https://MadDERt.github.io/faers/articles/full-workflow.html)
+**The essential guide for most users.** Follow a complete clinical case study (Insulin) from raw data ingestion to disproportionality signal detection.
+</div>
+
+<div class="roadmap-card">
+### 📋 [Function Reference](https://MadDERt.github.io/faers/reference/index.html)
+**For technical deep-dives.**
+Detailed API documentation for every exported function, including parameter definitions and return values.
+</div>
+
+<div class="roadmap-card">
+### 📂 [Data Structures](https://MadDERt.github.io/faers/articles/faers.html#key-features)
+Understand how `faers` handles S4 objects and integrates with MedDRA/RxNorm hierarchies.
+</div>
+
+## Why `faers`? {.unnumbered}
+
+The following snippet demonstrates the clarity of the `faers` syntax:
+
+```{r, eval=FALSE}
+library(faers)
+
+# Download -> Standardize -> De-duplicate -> Signal Detection
+data <- faers(2023, "q1") %>% 
+  faers_standardize(meddra_path) %>% 
+  faers_dedup()
+
+results <- faers_phv_signal(data_filtered, .full = data)
+```
+
+## Key Features {.unnumbered}
+
+- 📥**Data Acquisition**: Automated downloading and parsing of FAERS quarterly data (supporting both ASCII and XML formats).
+
+- 🛠**Rigorous Preprocessing**: Advanced multi-quarter data merging and robust deduplication logic to ensure high data fidelity.
+
+- 🔍**Terminology Standardization**: Seamless integration with MedDRA, RxNorm, and the FDA Drugs API for precise mapping of drugs and adverse events.
+
+- 📊**Advanced Signal Detection**: Comprehensive support for disproportionality analysis, including ROR, PRR, BCPNN, and EBGM.
+
+- ⚡**High-Performance Computing**: Integrated with BiocParallel for memory-efficient, parallelized processing of millions of records.
+
+- 🌐**Knowledge Integration**: Direct support for Athena drug vocabularies and Standardised MedDRA Queries (SMQ) for mechanism-driven research.
+
+## Getting Help {.unnumbered}
+If you encounter questions or issues, please choose the appropriate channel:
+
+- Technical Issues: Post a reproducible example on the [GitHub Issue Tracker](https://github.com/WangLabCSU/faers/issues).
+
+- Scientific Discussion: Visit the [Bioconductor Support Site](https://support.bioconductor.org/)(Tag: faers).
+
+## Session Information {.unnumbered}
+```{r}
+sessionInfo()
+```

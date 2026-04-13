@@ -1,0 +1,223 @@
+---
+title: "full-workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{full-workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+## Pharmacovigilance Analysis using FAERS
+
+The FDA Adverse Event Reporting System (FAERS) is a cornerstone of post-market safety surveillance. However, its complex relational structure, data duplicates, and unstandardized terminology often hinder reproducible research.
+
+The faers package provides a modern, end-to-end framework designed to bridge the gap between raw spontaneous reporting data and actionable pharmacovigilance signals. This vignette demonstrates a complete workflow using Insulin as a case study, covering the following four core phases:
+
+- Data Acquisition and Parsing: Seamlessly downloading and parsing quarterly ASCII/XML data.
+
+- Clinical Terminology Standardization: Mapping drugs and adverse events to MedDRA and RxNorm hierarchies.
+
+- Multi-level Deduplication Strategy: Advanced deduplication logic to ensure statistical integrity.
+
+- Pharmacovigilance Signal Detection: Performing high-performance disproportionality analyses (ROR, PRR, BCPNN, EBGM).
+
+### Check metadata of FAERS
+```{r setup}
+library(faers)
+```
+This will return a data.table reporting years, period, quarter, and file urls
+and file sizes. By default, this will use the cached file in 
+`` tools::R_user_dir("`r faers:::pkg_nm()`", "cache") ``. 
+If it doesn't exist, the internal will parse metadata in 
+<`r sprintf("%s/extensions/FPD-QDE-FAERS/FPD-QDE-FAERS.html",
+faers:::fda_host("fis"))`> 
+
+```{r}
+head(faers_meta(internal = TRUE),3)
+```
+
+### Data Acquisition and Parsing
+The FAERS Quarterly Data files contain raw data extracted from the AERS database
+for the indicated time ranges. The quarterly data files, which are available in ASCII or SGML formats, include: 
+
+| Field Name | Dataset Name | Description |
+| :--- | :--- | :--- |
+| **`demo`** | Demographic | Patient demographics, report sources, and administrative information. |
+| **`drug`** | Drug | Drug information (names, dosage, routes) from the case reports. |
+| **`reac`** | Reaction | Adverse event terms coded using MedDRA Preferred Terms (PT). |
+| **`outc`** | Outcome | Patient outcomes (e.g., death, hospitalization, life-threatening). |
+| **`rpsr`** | Report Source | Specific sources of the reports (e.g., physician, manufacturer). |
+| **`ther`** | Therapy | Drug therapy start and end dates for the reported drugs. |
+| **`indi`** | Indication | MedDRA terms for the medical indications for which the drugs were used. |
+
+Generally, we can use `faers()` function to download and parse all quarterly
+data files from FAERS. Internally, the `faers()` function seamlessly utilizes
+`faers_download()` and `faers_parse()` to preprocess each quarterly data file
+from the FAERS repository. The default `format` was `ascii` and will return a
+`FAERSascii` object. (xml format would also be okay , but presently, the XML
+file receives only minimal support in the following process.)
+
+Some variables has been added into specific field. See `?faers_parse` for
+details. 
+
+```{r}
+# Please make sure to replace dir with your own directory path, as the file
+# included in the package is a sampled version.
+data1 <- faers(2004, "q1",
+    dir = system.file("extdata", package = "faers"),
+    compress_dir = tempdir()
+)
+data1
+```
+
+Furthermore, in cases where multiple quarterly data files are requisite, the
+`faers_combine()` function is judiciously employed. 
+```{r}
+data2 <- faers(c(2004, 2017), c("q1", "q2"),
+    dir = system.file("extdata", package = "faers"),
+    compress_dir = tempdir()
+)
+data2
+```
+
+You can use `faers_get()` to get specific field data, a data.table will be
+returned. 
+```{r}
+head(faers_get(data2, "demo"),3)
+```
+
+### Clinical Terminology Standardization
+The reac (reactions) and indi (indications) files in FAERS use Preferred Terms (PT) from the Medical Dictionary for Regulatory Activities (MedDRA). Standardizing these fields is crucial to map raw terms to their broader clinical categories, such as System Organ Classes (SOC).
+
+Use the faers_standardize() function to integrate your local MedDRA dictionary:
+
+```{r, eval=FALSE}
+# Replace `meddra_path` with the path to your uncompressed MedDRA data
+data <- faers_standardize(data2, meddra_path)
+```
+
+For this demonstration, we will load a pre-standardized dataset included in the package:
+```{r}
+data <- readRDS(system.file("extdata", "standardized_data.rds", package = "faers"))
+head(data, 3)
+```
+
+The standardized FAERSascii object stores complete MedDRA information in the @meddra slot. This includes both hierarchy and Standardised MedDRA Queries (SMQ) data.
+
+You can access these components using faers_meddra():
+```{r}
+# Retrieve MedDRA hierarchy index
+head(faers_meddra(data, use = "hierarchy"), 3)
+```
+
+Standardization adds several key columns to the indi and reac fields, such as meddra_hierarchy_idx, meddra_code, and meddra_pt. When you use faers_get(), these standardized columns are automatically merged:
+```{r}
+# Standardized columns are joined automatically
+head(faers_get(data, "reac"), 3)
+```
+
+### Multi-level Deduplication Strategy
+A significant limitation of the FAERS database is the presence of duplicate or incomplete reports. Multiple submissions for the same case (e.g., updates from a manufacturer) can bias statistical signals if not handled correctly.
+
+In faers, two cases are considered identical if they show full concordance across:
+
+Administered drugs
+
+Adverse reactions
+
+Discrepancies are permitted in only one (or none) of the following secondary fields: gender, age, country, event date, start date, or indications.
+
+Run the faers_dedup() function to clean your dataset:
+```{r}
+data <- faers_dedup(data)
+data
+```
+
+### Pharmacovigilance Signal Detection
+Pharmacovigilance focuses on the science and activities relating to the detection, assessment, and prevention of adverse effects. In this section, we transition from data preprocessing to Signal Mining using disproportionality analysis.
+
+1. Target Drug Filtering & Standardization
+To perform a precise analysis for "Insulin," we must account for the inconsistency of drug naming in FAERS (e.g., brand names vs. generic names). We leverage fda_drugs() to retrieve standardized synonyms from the FDA database and then use faers_filter() to isolate relevant reports.
+
+```{r, eval=FALSE}
+# Step 1: Define the target drug and fetch synonyms from Drugs@FDA
+insulin_names <- "insulin"
+insulin_pattern <- paste(insulin_names, collapse = "|")
+
+# This queries the official FDA drug database
+fda_insulin <- fda_drugs()[
+    grepl(insulin_pattern, ActiveIngredient, ignore.case = TRUE)
+]
+```
+
+```{r, echo=FALSE}
+insulin_names <- "insulin"
+insulin_pattern <- paste(insulin_names, collapse = "|")
+data_path <- system.file("extdata", "fda_insulin.rds", package = "faers")
+
+if (data_path == "") {
+    fda_insulin <- readRDS("../inst/extdata/fda_insulin.rds")
+} else {
+    fda_insulin <- readRDS(data_path)
+}
+```
+
+```{r}
+# Step 2: Create a robust regex pattern including all identified brand names
+insulin_pattern <- paste0(
+    unique(tolower(c(insulin_names, fda_insulin$DrugName))),
+    collapse = "|"
+)
+
+# Step 3: Filter the deduplicated dataset
+# We search in both 'drugname' and 'prod_ai' fields for maximum coverage
+insulin_data <- faers_filter(data, .field = "drug", .fn = function(x) {
+    idx <- grepl(insulin_pattern, x$drugname, ignore.case = TRUE) |
+           grepl(insulin_pattern, x$prod_ai, ignore.case = TRUE)
+    x[idx, primaryid]
+})
+insulin_data
+```
+
+2. Disproportionality Analysis (Signal Mining)The faers_phv_signal() function is the core engine for signal detection. It automatically constructs contingency tables and calculates a comprehensive suite of statistical indices:Frequentist Methods: ROR (Reporting Odds Ratio), PRR (Proportional Reporting Ratio), and Chi-square .Bayesian Methods: BCPNN (Information Component) and EBGM (Empirical Bayes Geometric Mean).Crucial Concept: To calculate these scores, you must specify the .full argument, which represents the background distribution (typically the entire deduplicated FAERS dataset) used for comparison.
+
+```{r,message=FALSE, warning=FALSE}
+# Perform signal detection using all supported methods
+# BiocParallel is used here to ensure memory-efficient processing
+insulin_signals <- faers_phv_signal(
+    insulin_data,
+    .full = data,
+    BPPARAM = BiocParallel::SerialParam(RNGseed = 1L)
+)
+
+# Display top signals at the default level (System Organ Class - SOC)
+head(insulin_signals, 3)
+```
+
+3. Multi-level Event Analysis
+While the default analysis occurs at the SOC (System Organ Class) level, faers allows you to explore signals at different granularities of the MedDRA hierarchy, such as HLGT (High-Level Group Term) or PT (Preferred Term).
+
+```{r,message=FALSE, warning=FALSE}
+# Refine the analysis to the HLGT level by adjusting the .events argument
+insulin_signals_hlgt <- faers_phv_signal(
+    insulin_data,
+    .events = "hlgt_name", 
+    .full = data,
+    BPPARAM = BiocParallel::SerialParam(RNGseed = 1L)
+)
+
+head(insulin_signals_hlgt, 3)
+```
+
+## sessionInfo
+```{r}
+sessionInfo()
+```

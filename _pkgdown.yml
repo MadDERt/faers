@@ -1,0 +1,19 @@
+url: https://MadDERt.github.io/faers/
+template:
+  params:
+    bootswatch: flatly
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, news]
+    right: [github]
+  components:
+    articles:
+      text: 📖 Tutorials
+      menu:
+        - text: "Getting Started"
+          href: articles/faers.html
+        - text: "Full Workflow Case Study"
+          href: articles/full-workflow.html
+        - text: "Full Manual"  
+          href: https://bioconductor.org/packages/devel/bioc/manuals/faers/man/faers.pdf
