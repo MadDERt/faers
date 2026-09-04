@@ -232,4 +232,4 @@ methods::setMethod(
   }
 )
 
-utils::globalVariables(c("a", "b", "c", "d", "n.1", "primaryid", "pt", "soc_name"))
+utils::globalVariables(c(".", "a", "b", "c", "d", "n.1", "primaryid", "pt", "soc_name"))

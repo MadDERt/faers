@@ -42,6 +42,7 @@
 NULL
 
 #' @include meddra.R
+#' @include class-FAERSdb.R
 methods::setClassUnion("MedDRAOrNull", c("NULL", "MedDRA"))
 
 #' @export

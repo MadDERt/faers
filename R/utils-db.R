@@ -63,7 +63,7 @@ db_field_tables <- function() {
 # Generate a fresh on-disk database path (combine/materialize make their own
 # DB so the source connections are untouched).
 db_new_path <- function() {
-    file.path(tempdir(), sprintf("faers_%s.duckdb", digest_short(runif(1L))))
+    file.path(tempdir(), sprintf("faers_%s.duckdb", digest_short(stats::runif(1L))))
 }
 
 # A short stable hash used to namespace temp objects / file names without
