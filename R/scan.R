@@ -40,8 +40,9 @@
 #' Any MedDRA hierarchy column (`pt_name`, `hlt_name`, `hlgt_name`,
 #' `soc_name`, ...) added by [faers_standardize] can be used, as well as the
 #' raw `pt` column. Defaults to `"pt"`.
-#' @param .drug_field A string, the column of the `drug` field used to define
-#' drugs: `"drugname"` (default), `"actv_nm"` or `"prod_ai"`.
+#' @param .drug_field A string, the column of the standardized `drug` field
+#' used to define drugs: `"drugname"` (default) or `"prod_ai"` (active
+#' ingredient).
 #' @param .drug_pattern An optional regular expression. If supplied, only drug
 #' names matching it (case-insensitively) are kept in the result, enabling
 #' scans of drug classes without paying for the whole database.

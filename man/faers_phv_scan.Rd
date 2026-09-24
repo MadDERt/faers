@@ -30,8 +30,9 @@ Any MedDRA hierarchy column (\code{pt_name}, \code{hlt_name}, \code{hlgt_name},
 \code{soc_name}, ...) added by \link{faers_standardize} can be used, as well as the
 raw \code{pt} column. Defaults to \code{"pt"}.}
 
-\item{.drug_field}{A string, the column of the \code{drug} field used to define
-drugs: \code{"drugname"} (default), \code{"actv_nm"} or \code{"prod_ai"}.}
+\item{.drug_field}{A string, the column of the standardized \code{drug} field
+used to define drugs: \code{"drugname"} (default) or \code{"prod_ai"} (active
+ingredient).}
 
 \item{.drug_pattern}{An optional regular expression. If supplied, only drug
 names matching it (case-insensitively) are kept in the result, enabling
