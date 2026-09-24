@@ -5,3 +5,6 @@ inst/doc
 faers.Rproj
 ..Rcheck/
 Rcheck
+.Rlib
+.DS_Store
+.test_full.log
