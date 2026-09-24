@@ -8,3 +8,6 @@
 ^README\.Rmd$
 ^README\.md$
 ^README\.html$
+^\.Rlib$
+^\.test_full\.log$
+^\.DS_Store$
