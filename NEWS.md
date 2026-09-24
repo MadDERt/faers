@@ -1,3 +1,19 @@
+# faers 1.5.6
+
+* Added `faers_phv_scan()`, a whole-database signal scanner that enumerates
+  all drug x event pairs, builds a contingency table for every pair and runs
+  the requested disproportionality methods in one vectorized pass. It ships
+  with an optimized backend for `database = "duckdb"` (single out-of-core SQL
+  aggregation) and a chunked implementation for the memory backend, and
+  supports optional drug whitelisting via `.drug_pattern`.
+
+# faers 1.5.5
+
+* Documented the DuckDB backend: `faers()`, `faers_parse()`, `faers_standardize()`
+  and the downstream pipeline now accept `database = "duckdb"`, keeping the
+  quarterly data out of memory in an on-disk DuckDB database with an identical
+  analysis API (`faers_get`, `faers_counts`, `faers_phv_table`, ...).
+
 # faers 1.5.1
 
 * Fixed error in `handle_setopt(h, ...)` caused by unsupported option `multi_timeout`.

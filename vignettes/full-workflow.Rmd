@@ -217,6 +217,37 @@ insulin_signals_hlgt <- faers_phv_signal(
 head(insulin_signals_hlgt, 3)
 ```
 
+## Whole-database signal scanning
+
+While `faers_phv_signal()` answers "*which events are associated with this
+drug?*", whole-database pharmacovigilance often asks the reverse question:
+"*which drug-event pairs stand out across the entire database?*"
+`faers_phv_scan()` enumerates every drug x event pair present in the data,
+builds the 2x2 contingency table for each pair, and runs the requested
+disproportionality methods in a single vectorized pass.
+
+```{r, eval = FALSE}
+# Scan the whole database at the PT level.
+# - .min_a keeps only pairs co-reported at least 3 times
+# - cheap vectorized methods are the default; run ebgm/bcpnn_mcmc only on
+#   the candidates you care about
+res <- faers_phv_scan(data, .events = "pt", .min_a = 3L)
+
+# the result is a ranked table of candidate signals
+head(res[, .(drugname, pt, a, ror, ror_ci_low, prr)], 10)
+```
+
+A few practical notes:
+
+- The data must be standardized **and** de-duplicated before scanning.
+- Drug names are lower-cased and trimmed, and empty/`unknown` names are
+  dropped; brand-name variants are *not* merged in the current version.
+- For scans spanning many years of quarterly data, build the object with
+  `database = "duckdb"`: the drug x event counting then runs as a single
+  out-of-core SQL aggregation that never loads the raw tables into memory.
+- Use `.drug_pattern` to restrict the scan to a drug class, e.g.
+  `faers_phv_scan(data, .events = "pt", .drug_pattern = "insulin|humulin")`.
+
 ## sessionInfo
 ```{r}
 sessionInfo()
