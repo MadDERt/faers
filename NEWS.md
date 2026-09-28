@@ -7,6 +7,14 @@
   aggregation) and a chunked implementation for the memory backend, and
   supports optional drug whitelisting via `.drug_pattern`.
 
+* Fixed `faers_phv_composite()`: hierarchy event types such as `soc_name`
+  no longer abort with "object not found" (event columns are now resolved
+  via `faers_get()`, which attaches the MedDRA hierarchy on both the memory
+  and the duckdb backends), any standardized `reac` event column is accepted,
+  an unused full-database `faers_counts()` call that crashed on duckdb-backed
+  objects was removed, de-duplication is now enforced, and the undeclared
+  `assertthat` usage was replaced with the internal assertion helpers.
+
 # faers 1.5.5
 
 * Documented the DuckDB backend: `faers()`, `faers_parse()`, `faers_standardize()`

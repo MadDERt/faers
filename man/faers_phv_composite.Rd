@@ -40,10 +40,11 @@ faers_phv_signal_composite(.object, ...)
 )
 }
 \arguments{
-\item{.object}{A \link{FAERSascii} object. The unique number of \code{primaryids} from
-\code{.object} will be regarded as \code{n1.}.}
+\item{.object}{A \link{FAERSascii} object. It must be standardized and
+de-duplicated. The unique number of \code{primaryids} from \code{.object} will be
+regarded as \code{n1.}.}
 
-\item{.event_set}{A character vector of PT terms or a logical expression that
+\item{.event_set}{A character vector of event terms or a function that
 defines the set of adverse events of interest.}
 
 \item{...}{Other arguments passed to specific methods.}
@@ -52,10 +53,10 @@ defines the set of adverse events of interest.}
 
 \item{.object2}{A \link{FAERSascii} object with data from another interested drug.}
 
-\item{.event_type}{A character string specifying the type of adverse event to use.
-Must be one of the two specific literal values: \code{"pt"} (Preferred Term) or
-\code{"soc_name"} (System Organ Class name). Any other value will cause an error.
-Defaults to \code{"pt"}.}
+\item{.event_type}{A string specifying the event column of the standardized
+\code{reac} data to use, e.g. \code{"pt"} (Preferred Term), \code{"meddra_code"},
+\code{"meddra_pt"}, or any MedDRA hierarchy column (\code{"llt_name"}, \code{"pt_name"},
+\code{"hlt_name"}, \code{"hlgt_name"}, \code{"soc_name"}, ...). Defaults to \code{"pt"}.}
 
 \item{.methods}{Analysis methods to use (passed to \link{phv_signal}).}
 
