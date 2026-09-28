@@ -7,12 +7,15 @@
 #' 
 #' @param .object A [FAERSascii] object. The unique number of `primaryids` from
 #' `.object` will be regarded as `n1.`.
-#' @param .event_set A character vector of PT terms or a logical expression that
+#' @param .object A [FAERSascii] object. It must be standardized and
+#' de-duplicated. The unique number of `primaryids` from `.object` will be
+#' regarded as `n1.`.
+#' @param .event_set A character vector of event terms or a function that
 #' defines the set of adverse events of interest.
-#' @param .event_type A character string specifying the type of adverse event to use.
-#' Must be one of the two specific literal values: `"pt"` (Preferred Term) or
-#' `"soc_name"` (System Organ Class name). Any other value will cause an error.
-#' Defaults to `"pt"`.
+#' @param .event_type A string specifying the event column of the standardized
+#' `reac` data to use, e.g. `"pt"` (Preferred Term), `"meddra_code"`,
+#' `"meddra_pt"`, or any MedDRA hierarchy column (`"llt_name"`, `"pt_name"`,
+#' `"hlt_name"`, `"hlgt_name"`, `"soc_name"`, ...). Defaults to `"pt"`.
 #' @param ... Other arguments passed to specific methods.
 #' @return A [data.table][data.table::data.table] object with contingency tables
 #' for the specified event set.
@@ -37,8 +40,14 @@ methods::setMethod(
     if (!.object@standardization) {
       cli::cli_abort("{.arg .object} must be standardized using {.fn faers_standardize}")
     }
+    if (!.object@deduplication) {
+      cli::cli_abort("{.arg .object} must be de-duplicated using {.fn faers_dedup}")
+    }
     if (!.full@standardization) {
       cli::cli_abort("{.arg .full} must be standardized using {.fn faers_standardize}")
+    }
+    if (!.full@deduplication) {
+      cli::cli_abort("{.arg .full} must be de-duplicated using {.fn faers_dedup}")
     }
     
     full_primaryids <- faers_primaryid(.full)
@@ -70,8 +79,14 @@ methods::setMethod(
     if (!.object@standardization) {
       cli::cli_abort("{.arg .object} must be standardized using {.fn faers_standardize}")
     }
+    if (!.object@deduplication) {
+      cli::cli_abort("{.arg .object} must be de-duplicated using {.fn faers_dedup}")
+    }
     if (!.object2@standardization) {
       cli::cli_abort("{.arg .object2} must be standardized using {.fn faers_standardize}")
+    }
+    if (!.object2@deduplication) {
+      cli::cli_abort("{.arg .object2} must be de-duplicated using {.fn faers_dedup}")
     }
     
     primaryids <- faers_primaryid(.object)
@@ -99,15 +114,6 @@ methods::setMethod(
 .create_event_set_table <- function(object, full, event_set, event_type, 
                                     object_ids, full_ids, n1, n_total, ...) {
   
-  # Get event counts for the full database - FIXED: properly handle ...
-  call_args <- list(.object = full, .events = event_type)
-  dots <- list(...)
-  if (length(dots) > 0) {
-    call_args <- c(call_args, dots)
-  }
-  full_counts <- do.call(faers_counts, call_args)
-  
-
   event_patients <- .identify_event_set_patients(object, event_set, event_type)
   full_event_patients <- .identify_event_set_patients(full, event_set, event_type)
 
@@ -126,7 +132,6 @@ methods::setMethod(
     a = object_event_count
   )
 
-  data.table::setnames(composite_event, "n.1", "n.1")
   out <- merge(composite_event, interested_counts, by = "event", all = TRUE)
   
   out[, a := data.table::fifelse(is.na(a), 0L, a)]
@@ -164,25 +169,22 @@ methods::setMethod(
 #' @keywords internal
 .identify_event_set_patients <- function(object, event_set, event_type, ...) {
 
-  if (event_type == "pt") {
-    event_col <- "pt"
-  } else if (event_type == "soc_name") {
-    event_col <- "soc_name"
-  } else {
-    cli::cli_abort("Unsupported event type: {.val {event_type}}")
+  # `faers_get()` attaches the MedDRA hierarchy columns on both the memory and
+  # the duckdb backends, so any standardized `reac` column (e.g. `pt`,
+  # `meddra_code`, `soc_name`) can be used as the event column.
+  data_table <- faers_get(object, "reac")
+  if (!event_type %chin% names(data_table)) {
+    cli::cli_abort(c(
+      "{.val {event_type}} is not a column of the standardized {.field reac} data",
+      i = "Available columns: {.val {names(data_table)}}"
+    ))
   }
 
-  if (!is.null(object@db)) {
-    data_table <- db_collect(object@db@con, "reac")
-  } else {
-    data_table <- object@data$reac
-  }
-  
   if (is.character(event_set)) {
-    event_patients <- data_table[get(event_col) %in% event_set, .(primaryid)]
+    event_patients <- data_table[get(event_type) %in% event_set, .(primaryid)]
   } else if (is.logical(event_set) || is.function(event_set)) {
     if (is.function(event_set)) {
-      matches <- event_set(data_table[[event_col]])
+      matches <- event_set(data_table[[event_type]])
     } else {
       matches <- event_set
     }
@@ -214,8 +216,7 @@ methods::setMethod(
   function(.object, .event_set, .methods = NULL, ..., 
            .phv_signal_params = list(), BPPARAM = BiocParallel::SerialParam()) {
     
-    assertthat::assert_that(is.list(.phv_signal_params), 
-                            msg = ".phv_signal_params must be a list")
+    assert_(.phv_signal_params, is.list, "a list")
     
     out <- faers_phv_composite(.object = .object, .event_set = .event_set, ...)
     
