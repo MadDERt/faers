@@ -77,6 +77,8 @@ Collate:
     'rxnorm.R'
     'sample.R'
     'scan-db.R'
+    'scan-strata-db.R'
+    'scan-strata.R'
     'scan.R'
     'signal-eventset.R'
     'signal.R'

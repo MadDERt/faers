@@ -15,6 +15,17 @@
   objects was removed, de-duplication is now enforced, and the undeclared
   `assertthat` usage was replaced with the internal assertion helpers.
 
+* Added `faers_phv_scan_stratified()`, a stratified variant of the
+  whole-database scanner that splits the database into strata defined by
+  categorical `demo` columns (`sex`, `age_grp`, `occp_cod`, ...) and builds
+  one 2x2 contingency table per `stratum x drug x event` combination against
+  the stratum-internal background (`n_stratum`). Reports with missing strata
+  values are grouped into an explicit `"Missing"` stratum by default
+  (`.na_stratum = "keep"`) or dropped (`"drop"`), with a warning when a
+  stratification column is missing for more than 30% of the reports. Both
+  backends produce identical results, with the duckdb backend pushing the
+  whole stratified aggregation into a single SQL query.
+
 # faers 1.5.5
 
 * Documented the DuckDB backend: `faers()`, `faers_parse()`, `faers_standardize()`
