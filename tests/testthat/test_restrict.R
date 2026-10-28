@@ -220,7 +220,9 @@ testthat::test_that("faers_restrict produces identical id sets on memory and duc
         # physically deleting rows (faers_keep_db semantics)
         mem2 <- restrict_sample_object()
         db2 <- restrict_db_twin(mem2)
-        mem_res <- do.call(faers_restrict, c(list(.object = mem2), conds[[i]]))
+        mem_res <- suppressWarnings(do.call(
+            faers_restrict, c(list(.object = mem2), conds[[i]])
+        ))
         db_res <- suppressWarnings(do.call(
             faers_restrict, c(list(.object = db2), conds[[i]])
         ))

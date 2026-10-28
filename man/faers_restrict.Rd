@@ -79,19 +79,22 @@ warning, mirroring the package's philosophy of never silently truncating
 data.
 }
 \examples{
-\donttest{
-# The bundled sample is already standardized.
+# The bundled sample must be de-duplicated before scanning; `faers_dedup()`
+# also standardizes the age column used by `.age`.
 data <- readRDS(system.file("extdata", "standardized_data.rds", package = "faers"))
+data <- faers_dedup(data)
 
-# keep female reports aged 18-85
-sub <- faers_restrict(data, .sex = "Female", .age = c(18, 85))
-
-# period keys
-sub2 <- faers_restrict(data, .period = c("2004q1", "2017q2"))
+# keep female reports aged 18-85 (missing ages are excluded and counted)
+sub <- suppressWarnings(faers_restrict(data, .sex = "Female", .age = c(18, 85)))
+nrow(faers_get(sub, "demo"))
 
 # date window on the FDA receipt date
-sub3 <- faers_restrict(data, .date_range = c("2004-01-01", "2004-12-31"))
-}
+sub2 <- faers_restrict(data, .date_range = c("2004-01-01", "2004-12-31"))
+nrow(faers_get(sub2, "demo"))
+
+# combine with a signal scan on primary-suspect drugs only
+res <- faers_phv_scan(sub2, .min_a = 2L, .role_cod = "PS")
+res[order(-ror), list(drugname, pt, a, ror, ror_ci_low)]
 }
 \seealso{
 \code{\link[=faers_keep]{faers_keep()}}, \code{\link[=faers_filter]{faers_filter()}}
