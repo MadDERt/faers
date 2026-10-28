@@ -90,7 +90,6 @@ RESTRICT_LABELS <- c(
 #' res <- faers_phv_scan(sub2, .min_a = 2L, .role_cod = "PS")
 #' res[order(-ror), list(drugname, pt, a, ror, ror_ci_low)]
 #' @export
-#' @export
 faers_restrict <- function(
     .object, .period = NULL, .date_range = NULL,
     .date_field = c("fda_dt", "event_dt", "rept_dt"), .sex = NULL,
@@ -108,6 +107,10 @@ faers_restrict <- function(
     .country <- restrict_check_values_free(.country, ".country")
 
     demo <- faers_get(.object, "demo")
+    # Fail loudly when a requested condition column does not exist (older
+    # quarters lack `age_grp`; some builds may lack `occr_country`), instead
+    # of silently excluding every report.
+    restrict_check_demo_cols(demo, .age_grp, .country)
     enabled <- restrict_enabled_conditions(
         .period, .date_range, .sex, .age, .age_grp, .country
     )
@@ -163,11 +166,71 @@ faers_restrict <- function(
         )
     }
 
-    # delegate to faers_keep so both backends + flags are handled identically
+    # delegate to faers_keep so both backends + flags are handled identically.
+    # duckdb objects share the source db connection, and `faers_keep_db()`
+    # physically DELETEs rows, so keep a private copy: without it, restricting
+    # Female would wipe the source db and a later Male restriction (or the
+    # original object, or previously returned results) would see empty data.
+    if (!is.null(.object@db)) {
+        .object <- restrict_private_db_copy(.object)
+    }
     faers_keep(.object, ids, invert = FALSE)
 }
 
+# Deep-copy the duckdb tables of an object into a fresh temporary database so
+# that the physical DELETE performed by `faers_keep_db()` cannot touch the
+# user's original database. Returns a db-backed FAERSascii whose @db points at
+# the private copy (proxies rebuilt against the new connection); the source
+# connection and every previously created object stay untouched.
+restrict_private_db_copy <- function(.object) {
+    fields <- names(.object@db@tables)
+    con_src <- .object@db@con
+    tmp_db <- db_new_path()
+    con <- db_connect(tmp_db)
+    # copy every physical field table into the fresh database
+    for (field in fields) {
+        tbl <- db_collect(con_src, field)
+        db_ingest(con, field, tbl)
+    }
+    # the meddra hierarchy lookup is re-ingested so SQL joins keep working
+    if (!is.null(.object@meddra)) {
+        db_ingest_meddra(con, .object)
+    }
+    db_store <- methods::new(
+        "FAERSdb", con = con, path = tmp_db,
+        version = .object@db@version, tables = .object@db@tables
+    )
+    data <- stats::setNames(lapply(fields, function(f) {
+        methods::new("FAERSdbTbl", con = con, table = db_field_table(f))
+    }), fields)
+    methods::new(
+        "FAERSascii", data = data,
+        deletedCases = methods::slot(.object, "deletedCases"),
+        year = .object@year, quarter = .object@quarter,
+        standardization = .object@standardization,
+        deduplication = .object@deduplication,
+        format = .object@format, meddra = .object@meddra, db = db_store
+    )
+}
+
 # ---------- validation helpers ----------
+
+# A requested `.age_grp` / `.country` filter is meaningless when the demo
+# table lacks the column entirely (older FAERS quarters) — abort instead of
+# silently returning an empty object.
+restrict_check_demo_cols <- function(demo, .age_grp, .country) {
+    missing_cols <- c(
+        age_grp = if (!is.null(.age_grp) && !"age_grp" %in% names(demo)) "age_grp",
+        country = if (!is.null(.country) && !"occr_country" %in% names(demo)) "occr_country"
+    )
+    if (length(missing_cols)) {
+        cli::cli_abort(c(
+            "Column{?s} {.field {names(missing_cols)}} not found in the demo table",
+            i = "The requested condition{?s} cannot be applied: {.val {unname(missing_cols)}} conditions on a period without these columns would exclude every report",
+            i = "Check available columns with {.fn faers_get}"
+        ))
+    }
+}
 
 restrict_check_period <- function(period) {
     if (is.null(period)) {
@@ -313,10 +376,12 @@ restrict_parse_dates <- function(x) {
     if (any(ok)) {
         out[ok] <- as.Date(s[ok], format = "%Y%m%d")
     }
-    # also accept ISO strings if a user hand-edited a table
+    # also accept ISO strings if a user hand-edited a table (vectorized via
+    # vapply: as.Date() on a multi-element vector would pass a length>1
+    # condition to the old single-value helper and crash)
     rest <- which(!ok & !is.na(s) & nchar(s) == 10L)
     if (length(rest)) {
-        iso <- restrict_parse_one_date(s[rest])
+        iso <- vapply(s[rest], restrict_parse_one_date, numeric(1L))
         hit <- !is.na(iso)
         out[rest[hit]] <- as.Date(iso[hit], origin = "1970-01-01")
     }

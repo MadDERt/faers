@@ -249,8 +249,10 @@ testthat::test_that("faers_phv_scan .role_cod restricts the exposure definition"
         "PS"
     )
     # NULL keeps everything (default; identical to previous versions)
-    r_null <- suppressMessages(faers_phv_scan(obj, .min_a = 1L, .role_cod = NULL))
-    testthat::expect_equal(nrow(r_null <- r_all), nrow(r_null))
+    r_null <- suppressMessages(suppressWarnings(
+        faers_phv_scan(obj, .min_a = 1L, .role_cod = NULL)
+    ))
+    testthat::expect_identical(r_null, r_all)
 })
 
 testthat::test_that("faers_phv_scan_stratified .role_cod filters within strata", {
