@@ -14,6 +14,7 @@ faers_phv_scan(.object, ...)
   .drug_pattern = NULL,
   .min_a = 3L,
   .methods = c("ror", "prr"),
+  .role_cod = NULL,
   .chunk_size = 1000000L,
   .phv_signal_params = list(),
   BPPARAM = BiocParallel::SerialParam()
@@ -43,6 +44,15 @@ drug-event pair for it to be kept. Defaults to \code{3L}.}
 
 \item{.methods}{An atomic character, the disproportionality methods passed
 to \link{phv_signal}. Defaults to \code{c("ror", "prr")}.}
+
+\item{.role_cod}{An optional character vector of drug role codes to keep
+before counting: \code{"PS"} primary suspect, \code{"SS"} secondary suspect,
+\code{"C"} concomitant, \code{"I"} interacting. \code{NULL} (default) keeps every role,
+matching the behaviour of previous package versions. Restricting roles
+changes the exposure definition (e.g. \code{.role_cod = "PS"} counts only drugs
+the reporter listed as the primary suspect), so results are \strong{not}
+directly comparable with unrestricted scans; the total background \code{n}
+is unchanged either way.}
 
 \item{.chunk_size}{A single integer, the number of unique \code{primaryid}s
 processed per chunk by the memory backend. Only relevant for

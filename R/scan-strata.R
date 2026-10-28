@@ -82,6 +82,12 @@ STRATA_RESERVED <- c(
 #' which excludes them from the stratified scan.
 #' @param .methods An atomic character, the disproportionality methods passed
 #' to [phv_signal]. Defaults to `c("ror", "prr")`.
+#' @param .role_cod An optional character vector of drug role codes to keep
+#' before counting: `"PS"` primary suspect, `"SS"` secondary suspect,
+#' `"C"` concomitant, `"I"` interacting. `NULL` (default) keeps every role.
+#' Restricting roles changes the exposure definition within every stratum;
+#' the per-stratum background `n_stratum` is unchanged either way. See
+#' [faers_phv_scan()] for details.
 #' @param .chunk_size A single integer, the number of unique `primaryid`s
 #' processed per chunk by the memory backend. Only relevant for
 #' `database = "memory"`.
@@ -129,7 +135,8 @@ methods::setGeneric("faers_phv_scan_stratified", function(.object, ...) {
 methods::setMethod("faers_phv_scan_stratified", "FAERSascii", function(
     .object, .strata = "sex", .events = "pt", .drug_field = "drugname",
     .drug_pattern = NULL, .min_a = 3L, .methods = c("ror", "prr"),
-    .na_stratum = c("keep", "drop"), .chunk_size = 1e6L,
+    .role_cod = NULL, .na_stratum = c("keep", "drop"),
+    .chunk_size = 1e6L,
     .phv_signal_params = list(), BPPARAM = BiocParallel::SerialParam()
 ) {
     .na_stratum <- match.arg(.na_stratum)
@@ -139,6 +146,9 @@ methods::setMethod("faers_phv_scan_stratified", "FAERSascii", function(
     assert_number_whole(.min_a, min = 1)
     assert_number_whole(.chunk_size, min = 1)
     assert_(.phv_signal_params, is.list, "a list")
+    .role_cod <- restrict_check_values(
+        .role_cod, SCAN_ROLE_CODES, ".role_cod"
+    )
     if (!is.character(.strata) || !length(.strata) || anyDuplicated(.strata)) {
         cli::cli_abort(c(
             "{.arg .strata} must be a non-empty character vector of distinct column names",
@@ -219,13 +229,14 @@ methods::setMethod("faers_phv_scan_stratified", "FAERSascii", function(
     if (!is.null(.object@db)) {
         counts <- scan_strata_counts_db(
             .object, strata_cols = .strata, drug_col = .drug_field,
-            event_col = .events, min_a = .min_a, na_stratum = .na_stratum
+            event_col = .events, min_a = .min_a, na_stratum = .na_stratum,
+            role_cod = .role_cod
         )
     } else {
         counts <- scan_strata_counts_memory(
             .object, strata_cols = .strata, drug_col = .drug_field,
             event_col = .events, min_a = .min_a, chunk_size = .chunk_size,
-            na_stratum = .na_stratum
+            na_stratum = .na_stratum, role_cod = .role_cod
         )
     }
 
@@ -368,7 +379,8 @@ methods::setMethod("faers_phv_scan_stratified", "FAERSascii", function(
 # every step.  Reports are atomic in their stratum (one demo row per
 # primaryid), so per-chunk counts sum to the exact database-wide counts.
 scan_strata_counts_memory <- function(object, strata_cols, drug_col, event_col,
-                                      min_a, chunk_size, na_stratum) {
+                                      min_a, chunk_size, na_stratum,
+                                      role_cod = NULL) {
     demo <- faers_get(object, "demo")
     strata_dt <- unique(
         demo[, c("primaryid", strata_cols), with = FALSE],
@@ -402,6 +414,12 @@ scan_strata_counts_memory <- function(object, strata_cols, drug_col, event_col,
 
     drug <- faers_get(object, "drug")
     reac <- faers_get(object, "reac")
+
+    # ---- optional drug-role restriction (identical to the plain scan) ----
+    if (!is.null(role_cod)) {
+        keep_roles <- role_cod
+        drug <- drug[role_cod %chin% keep_roles]
+    }
 
     # ---- normalize + deduplicate both sides (identical to the scan) ----
     drug_u <- drug[, .(primaryid, drug = tolower(trimws(get(drug_col))))]

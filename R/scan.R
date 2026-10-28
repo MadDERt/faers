@@ -50,6 +50,14 @@
 #' drug-event pair for it to be kept. Defaults to `3L`.
 #' @param .methods An atomic character, the disproportionality methods passed
 #' to [phv_signal]. Defaults to `c("ror", "prr")`.
+#' @param .role_cod An optional character vector of drug role codes to keep
+#' before counting: `"PS"` primary suspect, `"SS"` secondary suspect,
+#' `"C"` concomitant, `"I"` interacting. `NULL` (default) keeps every role,
+#' matching the behaviour of previous package versions. Restricting roles
+#' changes the exposure definition (e.g. `.role_cod = "PS"` counts only drugs
+#' the reporter listed as the primary suspect), so results are **not**
+#' directly comparable with unrestricted scans; the total background `n`
+#' is unchanged either way.
 #' @param .chunk_size A single integer, the number of unique `primaryid`s
 #' processed per chunk by the memory backend. Only relevant for
 #' `database = "memory"`; smaller values trade speed for peak memory.
@@ -93,7 +101,8 @@ methods::setGeneric("faers_phv_scan", function(.object, ...) {
 #' @method faers_phv_scan FAERSascii
 methods::setMethod("faers_phv_scan", "FAERSascii", function(
     .object, .events = "pt", .drug_field = "drugname", .drug_pattern = NULL,
-    .min_a = 3L, .methods = c("ror", "prr"), .chunk_size = 1e6L,
+    .min_a = 3L, .methods = c("ror", "prr"), .role_cod = NULL,
+    .chunk_size = 1e6L,
     .phv_signal_params = list(), BPPARAM = BiocParallel::SerialParam()
 ) {
     assert_string(.drug_field, allow_empty = FALSE)
@@ -102,6 +111,9 @@ methods::setMethod("faers_phv_scan", "FAERSascii", function(
     assert_number_whole(.min_a, min = 1)
     assert_number_whole(.chunk_size, min = 1)
     assert_(.phv_signal_params, is.list, "a list")
+    .role_cod <- restrict_check_values(
+        .role_cod, SCAN_ROLE_CODES, ".role_cod"
+    )
     if (!.object@standardization) {
         cli::cli_abort("{.arg .object} must be standardized using {.fn faers_standardize}")
     }
@@ -140,12 +152,13 @@ methods::setMethod("faers_phv_scan", "FAERSascii", function(
     # ---- count all drug x event pairs ----
     if (!is.null(.object@db)) {
         counts <- scan_counts_db(
-            .object, drug_col = .drug_field, event_col = .events, min_a = .min_a
+            .object, drug_col = .drug_field, event_col = .events,
+            min_a = .min_a, role_cod = .role_cod
         )
     } else {
         counts <- scan_counts_memory(
             .object, drug_col = .drug_field, event_col = .events,
-            min_a = .min_a, chunk_size = .chunk_size
+            min_a = .min_a, chunk_size = .chunk_size, role_cod = .role_cod
         )
     }
 
@@ -213,6 +226,8 @@ SCAN_EXPENSIVE_THRESHOLD <- 1e5L
 # Drug names dropped before counting (keep in sync with
 # DB_SCAN_UNKNOWN_DRUGS in scan-db.R).
 SCAN_UNKNOWN_DRUGS <- c("", "unknown", "?")
+# Valid drug role codes (keep in sync with DB_SCAN_ROLE_CODES in scan-db.R).
+SCAN_ROLE_CODES <- c("PS", "SS", "C", "I")
 
 #' Shared assembly of the per-pair 2x2 contingency table.
 #' `counts` must provide `drug`, `event`, `a`, `n_drug`, `n_event`, `n`
@@ -233,9 +248,16 @@ scan_build_contingency <- function(counts) {
 # Chunking is exact because every report's rows share the same `primaryid`, so
 # a report never spans two chunks: summing per-chunk COUNT(DISTINCT primaryid)
 # yields the database-wide distinct counts.
-scan_counts_memory <- function(object, drug_col, event_col, min_a, chunk_size) {
+scan_counts_memory <- function(object, drug_col, event_col, min_a, chunk_size,
+                               role_cod = NULL) {
     drug <- faers_get(object, "drug")
     reac <- faers_get(object, "reac")
+
+    # ---- optional drug-role restriction (exposure definition) ----
+    if (!is.null(role_cod)) {
+        keep_roles <- role_cod
+        drug <- drug[role_cod %chin% keep_roles]
+    }
 
     # ---- normalize + deduplicate both sides ----
     drug_u <- drug[, .(primaryid, drug = tolower(trimws(get(drug_col))))]

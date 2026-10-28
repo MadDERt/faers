@@ -1,5 +1,24 @@
 # faers 1.5.6
 
+* Added `faers_restrict()`, a report-level restriction helper that narrows a
+  standardized FAERS object to a sub-population by reporting period
+  (`.period`), date window (`.date_range` on `.date_field`, with partial
+  dates like year-only `1999` excluded and counted by default, or kept with
+  `.date_partial = "keep"`), sex, age interval (on the standardized
+  `age_in_years`), age group and occurrence country. All enabled conditions
+  are intersected; excluded reports (including missing or unparseable values)
+  are counted per condition and reported in a single aggregated warning. The
+  implementation converges onto `primaryid` and reuses `faers_keep()`, so
+  both the memory and duckdb backends work and the
+  `@standardization` / `@deduplication` flags are preserved.
+
+* Added `.role_cod` to `faers_phv_scan()` and `faers_phv_scan_stratified()`:
+  restrict the exposure definition to specific drug role codes (`PS` primary
+  suspect, `SS` secondary suspect, `C` concomitant, `I` interacting) before
+  counting. `NULL` (default) keeps every role, matching previous behaviour;
+  the background `n` / `n_stratum` is unchanged either way. Implemented on
+  both backends (memory pre-filter and SQL `role_cod IN (...)` pushdown).
+
 * Added `faers_phv_scan()`, a whole-database signal scanner that enumerates
   all drug x event pairs, builds a contingency table for every pair and runs
   the requested disproportionality methods in one vectorized pass. It ships

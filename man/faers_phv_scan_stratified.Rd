@@ -15,6 +15,7 @@ faers_phv_scan_stratified(.object, ...)
   .drug_pattern = NULL,
   .min_a = 3L,
   .methods = c("ror", "prr"),
+  .role_cod = NULL,
   .na_stratum = c("keep", "drop"),
   .chunk_size = 1000000L,
   .phv_signal_params = list(),
@@ -49,6 +50,13 @@ drug-event pair \strong{within a stratum} for it to be kept. Defaults to \code{3
 
 \item{.methods}{An atomic character, the disproportionality methods passed
 to \link{phv_signal}. Defaults to \code{c("ror", "prr")}.}
+
+\item{.role_cod}{An optional character vector of drug role codes to keep
+before counting: \code{"PS"} primary suspect, \code{"SS"} secondary suspect,
+\code{"C"} concomitant, \code{"I"} interacting. \code{NULL} (default) keeps every role.
+Restricting roles changes the exposure definition within every stratum;
+the per-stratum background \code{n_stratum} is unchanged either way. See
+\code{\link[=faers_phv_scan]{faers_phv_scan()}} for details.}
 
 \item{.na_stratum}{Either \code{"keep"} (default), which groups reports with
 missing strata values into an explicit \code{"Missing"} stratum, or \code{"drop"},

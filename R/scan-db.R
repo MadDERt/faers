@@ -13,6 +13,9 @@
 # SQL string literal for the drug names that are dropped before counting.
 DB_SCAN_UNKNOWN_DRUGS <- c("", "unknown", "?")
 
+# Valid drug role codes in FAERS ascii data.
+DB_SCAN_ROLE_CODES <- c("PS", "SS", "C", "I")
+
 # SQL fragment filtering garbage drug names (must stay in sync with
 # SCAN_UNKNOWN_DRUGS in scan.R, which the memory path applies in R).
 db_scan_drug_filter_sql <- function(drug_col_q) {
@@ -27,8 +30,25 @@ db_scan_drug_filter_sql <- function(drug_col_q) {
     )
 }
 
+# SQL fragment restricting drug rows to the requested role_cod whitelist.
+# Returns "" when `role_cod` is NULL (no role restriction), so callers can
+# append it unconditionally.
+db_scan_role_filter_sql <- function(role_cod) {
+    if (is.null(role_cod)) {
+        return("")
+    }
+    vals <- paste(
+        vapply(role_cod, function(x)
+            sprintf("'%s'", gsub("'", "''", x)), character(1L)
+        ),
+        collapse = ", "
+    )
+    sprintf(" AND role_cod IN (%s)", vals)
+}
+
 # Build the full SQL string for the scan aggregation.
-db_scan_query <- function(drug_col, event_col, meddra, min_a) {
+db_scan_query <- function(drug_col, event_col, meddra, min_a,
+                          role_cod = NULL) {
     drug_tbl <- db_field_table("drug")
     reac_tbl <- db_field_table("reac")
     demo_tbl <- db_field_table("demo")
@@ -38,9 +58,11 @@ db_scan_query <- function(drug_col, event_col, meddra, min_a) {
         paste(
             "SELECT DISTINCT primaryid, lower(trim(%s)) AS drugname",
             "FROM %s",
-            "WHERE %s IS NOT NULL AND %s"
+            "WHERE %s IS NOT NULL AND %s%s"
         ),
-        drug_col_q, drug_tbl, drug_col_q, db_scan_drug_filter_sql(drug_col_q)
+        drug_col_q, drug_tbl, drug_col_q,
+        db_scan_drug_filter_sql(drug_col_q),
+        db_scan_role_filter_sql(role_cod)
     )
     if (isTRUE(meddra)) {
         reac_sel <- sprintf(
@@ -94,14 +116,17 @@ CROSS JOIN (SELECT COUNT(DISTINCT primaryid) AS n FROM %s) AS x
 
 # Run the scan aggregation on a db-backed object and return a data.table with
 # columns: drug, event, a, n_drug, n_event, n.
-scan_counts_db <- function(object, drug_col, event_col, min_a) {
+scan_counts_db <- function(object, drug_col, event_col, min_a,
+                           role_cod = NULL) {
     con <- object@db@con
     meddra <- event_col %chin% names(object@meddra@hierarchy)
     if (meddra && !DB_MEDDRA_TABLE %in% DBI::dbListTables(con)) {
         db_ingest_meddra(con, object)
     }
     out <- DBI::dbGetQuery(
-        con, db_scan_query(drug_col, event_col, meddra, min_a)
+        con, db_scan_query(drug_col, event_col, meddra, min_a,
+            role_cod = role_cod
+        )
     )
     out <- data.table::as.data.table(out)
     # COUNT(DISTINCT ...) comes back as BIGINT/double -> coerce to integer,
