@@ -213,3 +213,79 @@ testthat::test_that("db_scan_query builds SQL with the right filters", {
     testthat::expect_match(q_meddra, "faers_meddra", fixed = TRUE)
     testthat::expect_match(q_meddra, "meddra_hierarchy_idx", fixed = TRUE)
 })
+
+testthat::test_that("faers_phv_scan .role_cod restricts the exposure definition", {
+    obj <- scan_sample_object()
+    r_all <- suppressMessages(suppressWarnings(
+        faers_phv_scan(obj, .min_a = 1L)
+    ))
+    r_ps <- suppressMessages(suppressWarnings(
+        faers_phv_scan(obj, .min_a = 1L, .role_cod = "PS")
+    ))
+    testthat::expect_gt(nrow(r_all), nrow(r_ps))
+    # every PS pair's a is a subset count of the all-roles pair
+    m <- merge(
+        r_all[, .(drugname, pt, a_all = a)],
+        r_ps[, .(drugname, pt, a_ps = a)],
+        by = c("drugname", "pt"), all = TRUE
+    )
+    m[is.na(a_ps), a_ps := 0L]
+    testthat::expect_true(all(m$a_ps <= m$a_all))
+    # background n is unchanged by the role filter
+    # (reconstruct n from one row: n = a + b + c + d)
+    if (nrow(r_all) && nrow(r_ps)) {
+        n_all <- r_all[1, a + b + c + d]
+        n_ps <- r_ps[1, a + b + c + d]
+        testthat::expect_equal(n_all, n_ps)
+    }
+    # multiple roles accepted
+    r_pss <- suppressMessages(suppressWarnings(
+        faers_phv_scan(obj, .min_a = 1L, .role_cod = c("PS", "SS"))
+    ))
+    testthat::expect_gte(nrow(r_pss), nrow(r_ps))
+    # invalid role code errors with the valid list
+    testthat::expect_error(
+        suppressMessages(faers_phv_scan(obj, .min_a = 1L, .role_cod = "XX")),
+        "PS"
+    )
+    # NULL keeps everything (default; identical to previous versions)
+    r_null <- suppressMessages(suppressWarnings(
+        faers_phv_scan(obj, .min_a = 1L, .role_cod = NULL)
+    ))
+    testthat::expect_identical(r_null, r_all)
+})
+
+testthat::test_that("faers_phv_scan_stratified .role_cod filters within strata", {
+    obj <- scan_sample_object()
+    s_all <- suppressMessages(faers_phv_scan_stratified(
+        obj, .strata = "sex", .min_a = 1L
+    ))
+    s_ps <- suppressMessages(suppressWarnings(
+        faers_phv_scan_stratified(
+            obj, .strata = "sex", .min_a = 1L, .role_cod = "PS"
+        )
+    ))
+    testthat::expect_gte(nrow(s_all), nrow(s_ps))
+    testthat::expect_equal(
+        sort(unique(s_all$n_stratum)), sort(unique(s_ps$n_stratum))
+    )
+    m <- merge(
+        s_all[, .(sex, drugname, pt, a_all = a)],
+        s_ps[, .(sex, drugname, pt, a_ps = a)],
+        by = c("sex", "drugname", "pt"), all = TRUE
+    )
+    m[is.na(a_ps), a_ps := 0L]
+    testthat::expect_true(all(m$a_ps <= m$a_all))
+})
+
+testthat::test_that("db_scan_role_filter_sql emits correct SQL", {
+    ns <- asNamespace("faers")
+    testthat::expect_identical(ns$db_scan_role_filter_sql(NULL), "")
+    q <- ns$db_scan_role_filter_sql(c("PS", "SS"))
+    testthat::expect_match(q, "role_cod IN ('PS', 'SS')", fixed = TRUE)
+    # full query embeds the fragment
+    q2 <- asNamespace("faers")$db_scan_query(
+        "drugname", "pt", meddra = FALSE, min_a = 3L, role_cod = "PS"
+    )
+    testthat::expect_match(q2, "role_cod IN ('PS')", fixed = TRUE)
+})

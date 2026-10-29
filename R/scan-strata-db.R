@@ -15,7 +15,7 @@
 
 # Build the full SQL string for the stratified scan aggregation.
 db_scan_strata_query <- function(strata_cols, drug_col, event_col, meddra,
-                                 min_a, na_stratum) {
+                                 min_a, na_stratum, role_cod = NULL) {
     drug_tbl <- db_field_table("drug")
     reac_tbl <- db_field_table("reac")
     demo_tbl <- db_field_table("demo")
@@ -52,9 +52,11 @@ db_scan_strata_query <- function(strata_cols, drug_col, event_col, meddra,
         paste(
             "SELECT DISTINCT primaryid, lower(trim(%s)) AS drugname",
             "FROM %s",
-            "WHERE %s IS NOT NULL AND %s"
+            "WHERE %s IS NOT NULL AND %s%s"
         ),
-        drug_col_q, drug_tbl, drug_col_q, db_scan_drug_filter_sql(drug_col_q)
+        drug_col_q, drug_tbl, drug_col_q,
+        db_scan_drug_filter_sql(drug_col_q),
+        db_scan_role_filter_sql(role_cod)
     )
     if (isTRUE(meddra)) {
         reac_sel <- sprintf(
@@ -142,7 +144,7 @@ db_scan_strata_query <- function(strata_cols, drug_col, event_col, meddra,
 # data.table with columns: <strata cols>, drug, event, a, n_drug, n_event,
 # n_stratum.
 scan_strata_counts_db <- function(object, strata_cols, drug_col, event_col,
-                                  min_a, na_stratum) {
+                                  min_a, na_stratum, role_cod = NULL) {
     con <- object@db@con
     meddra <- event_col %chin% names(object@meddra@hierarchy)
     if (meddra && !DB_MEDDRA_TABLE %in% DBI::dbListTables(con)) {
@@ -151,7 +153,8 @@ scan_strata_counts_db <- function(object, strata_cols, drug_col, event_col,
     out <- DBI::dbGetQuery(
         con,
         db_scan_strata_query(
-            strata_cols, drug_col, event_col, meddra, min_a, na_stratum
+            strata_cols, drug_col, event_col, meddra, min_a, na_stratum,
+            role_cod = role_cod
         )
     )
     out <- data.table::as.data.table(out)
