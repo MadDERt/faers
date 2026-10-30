@@ -37,7 +37,8 @@ Suggests:
     knitr,
     pak,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 biocViews: Software, DataImport, BiomedicalInformatics, Pharmacogenomics, Pharmacogenomics
 Encoding: UTF-8
 ByteCompile: true
