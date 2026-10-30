@@ -273,6 +273,137 @@ reports_db_twin <- function(mem_obj, con) {
     )
 }
 
+# Every pair of rows belongs to a real report in demo. Reports 1 and 2
+# satisfy AND across opposite character partitions; 3 and 4 have exclusions
+# in the opposite partition. Report 7 checks Unicode folding, and report 8
+# satisfies both inclusion patterns on one combination-product row.
+reports_mixed_object <- function() {
+    obj <- reports_synth_object()
+    obj@data$demo <- data.table::data.table(
+        year = 2004L, quarter = "q1", primaryid = as.character(1:8)
+    )
+    obj@data$drug <- data.table::data.table(
+        primaryid = as.character(c(1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 1)),
+        drugname = c(
+            "ASPIRIN", "caf\u00e9 warfarin", "caf\u00e9 aspirin", "WARFARIN",
+            "caf\u00e9 aspirin", "vitamin k", "ASPIRIN", "caf\u00e9 vitamin k",
+            "ASPIRIN", "WARFARIN", "caf\u00e9 aspirin", "caf\u00e9 warfarin",
+            "ASPIRIN", "\u212aetamine", "aspirin and warfarin", "ASPIRIN"
+        ),
+        role_cod = c("PS", "SS", "PS", "PS", "C", "I", "SS", "C",
+                     "PS", "SS", "PS", "PS", "PS", "PS", "PS", "PS")
+    )
+    obj@data$drug[, prod_ai := drugname]
+    obj
+}
+
+testthat::test_that("mixed-character report sets combine before AND/OR and exclusion", {
+    testthat::skip_if_not(has_duckdb)
+    mem <- reports_mixed_object()
+    con <- asNamespace("faers")$db_connect(":memory:")
+    withr::defer(DBI::dbDisconnect(con, shutdown = TRUE))
+    db <- reports_db_twin(mem, con)
+    cases <- list(
+        list(args = list(.drugs = c("aspirin", "warfarin")), ids = c("1", "2", "5", "6", "8")),
+        list(args = list(.drugs = c("aspirin", "warfarin"), .logic = "or"), ids = as.character(1:8)),
+        list(args = list(.drugs = c("aspirin", "warfarin"), .roles = list(warfarin = "PS")), ids = c("2", "6", "8")),
+        list(args = list(.drugs = c("aspirin", "warfarin"), .roles = list(aspirin = "PS", warfarin = "SS")), ids = c("1", "5")),
+        list(args = list(.drugs = "aspirin", .exclude_drugs = "vitamin k"), ids = c("1", "2", "5", "6", "7", "8")),
+        list(args = list(.drugs = c("aspirin", "warfarin"), .logic = "or", .exclude_drugs = "vitamin k"), ids = c("1", "2", "5", "6", "7", "8")),
+        list(args = list(.drugs = "aspirin", .exclude_drugs = "vitamin [k]"), ids = c("1", "2", "5", "6", "7", "8")),
+        list(args = list(.drugs = c("asp[i]rin", "warfarin")), ids = c("1", "2", "5", "6", "8")),
+        list(args = list(.drugs = c("aspirin", "zzzzmissing")), ids = character()),
+        list(args = list(.drugs = "aspirin", .exclude_drugs = "aspirin"), ids = character())
+    )
+    for (col in c("drugname", "prod_ai")) for (case in cases) {
+        for (object in list(mem, db)) {
+            args <- c(list(.object = object, .drug_col = col), case$args)
+            actual <- suppressMessages(do.call(faers_reports_with, c(args, list(.return = "ids"))))
+            expect_identical(actual, case$ids)
+            expect_identical(
+                suppressMessages(do.call(faers_reports_with, c(args, list(.return = "count")))),
+                as.integer(length(case$ids))
+            )
+        }
+    }
+})
+
+testthat::test_that("Unicode folding and hit diagnostics use complete per-pattern sets", {
+    testthat::skip_if_not(has_duckdb)
+    mem <- reports_mixed_object()
+    con <- asNamespace("faers")$db_connect(":memory:")
+    withr::defer(DBI::dbDisconnect(con, shutdown = TRUE))
+    db <- reports_db_twin(mem, con)
+    for (pattern in c("ketamine", "k", "s")) {
+        expected <- sort(unique(mem@data$drug$primaryid[
+            grepl(pattern, mem@data$drug$drugname, ignore.case = TRUE)
+        ]))
+        expect_identical(
+            suppressMessages(faers_reports_with(db, pattern, .return = "ids")), expected
+        )
+        expected_exclusion <- sort(setdiff(as.character(1:8), expected))
+        expect_identical(suppressMessages(faers_reports_with(
+            db, "aspirin", .exclude_drugs = pattern, .return = "ids"
+        )), expected_exclusion)
+    }
+    # Duplicate ASCII rows and cross-partition hits count once per report.
+    expect_message(
+        n <- faers_reports_with(db, c("aspirin", "warfarin"), .return = "count"),
+        "aspirin: 8"
+    )
+    expect_identical(n, 5L)
+    expect_message(
+        faers_reports_with(db, "warfarin", .roles = list(warfarin = "PS"), .return = "count"),
+        "warfarin: 3"
+    )
+})
+
+testthat::test_that("mixed-character object returns preserve the source and previous results", {
+    testthat::skip_if_not(has_duckdb)
+    mem <- reports_mixed_object()
+    con <- asNamespace("faers")$db_connect(":memory:")
+    withr::defer(DBI::dbDisconnect(con, shutdown = TRUE))
+    db <- reports_db_twin(mem, con)
+    original <- lapply(names(mem@data), function(f) db[[f]])
+    both <- suppressMessages(faers_reports_with(db, c("aspirin", "warfarin")))
+    withr::defer({
+        DBI::dbDisconnect(both@db@con, shutdown = TRUE)
+        unlink(c(both@db@path, paste0(both@db@path, ".wal")))
+    })
+    no_k <- suppressMessages(faers_reports_with(db, "aspirin", .exclude_drugs = "vitamin k"))
+    withr::defer({
+        DBI::dbDisconnect(no_k@db@con, shutdown = TRUE)
+        unlink(c(no_k@db@path, paste0(no_k@db@path, ".wal")))
+    })
+    expect_setequal(faers_primaryid(both), c("1", "2", "5", "6", "8"))
+    expect_setequal(faers_primaryid(no_k), c("1", "2", "5", "6", "7", "8"))
+    expect_identical(both@standardization, db@standardization)
+    expect_identical(both@deduplication, db@deduplication)
+    for (i in seq_along(mem@data)) {
+        f <- names(mem@data)[[i]]
+        expect_equal(db[[f]], original[[i]])
+        expect_true(all(both[[f]]$primaryid %in% faers_primaryid(both)))
+        expect_true(all(no_k[[f]]$primaryid %in% faers_primaryid(no_k)))
+    }
+})
+
+testthat::test_that("literal report queries do not materialize the full drug table", {
+    testthat::skip_if_not(has_duckdb)
+    con <- asNamespace("faers")$db_connect(":memory:")
+    withr::defer(DBI::dbDisconnect(con, shutdown = TRUE))
+    db <- reports_db_twin(reports_mixed_object(), con)
+    testthat::local_mocked_bindings(
+        db_collect = function(...) stop("Full-table collection is not needed"),
+        .package = "faers"
+    )
+    expect_identical(suppressMessages(faers_reports_with(
+        db, c("aspirin", "warfarin"), .return = "count"
+    )), 5L)
+    expect_identical(suppressMessages(faers_reports_with(
+        db, "aspirin", .exclude_drugs = "vitamin k", .return = "ids"
+    )), c("1", "2", "5", "6", "7", "8"))
+})
+
 testthat::test_that("faers_reports_with parity on db twin (AND/OR/roles/exclude/regex)", {
     testthat::skip_if_not(has_duckdb)
     ns <- asNamespace("faers")

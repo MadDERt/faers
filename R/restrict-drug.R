@@ -154,27 +154,31 @@
 
 # ---------- shared matching core (memory backend) ----------
 
-# Reports whose drug rows satisfy every/any pattern. Same row may satisfy
-# several patterns (fixed-dose combination rows). Per-drug roles (named list
-# keyed by pattern) restrict which drug rows may satisfy that pattern;
-# patterns without a role entry may be satisfied by any role.
-.reports_with_ids_mem <- function(drug, patterns, logic, roles, excludes, drug_col) {
-    hit <- function(pattern, roles) {
-        out <- grepl(pattern, drug[[drug_col]], ignore.case = TRUE)
-        if (length(roles)) out <- out & drug$role_cod %chin% roles
-        out
-    }
-    id_sets <- lapply(patterns, function(p) {
-        unique(drug$primaryid[hit(p, roles[[p]])])
+# Row-level fold matching with optional per-pattern role restriction. Returns
+# a logical vector aligned with `drug`'s rows. R matching defines the
+# semantics for the memory backend and the non-ASCII / regex SQL fallback.
+.reports_with_row_hit <- function(drug, pattern, roles, drug_col) {
+    out <- grepl(pattern, drug[[drug_col]], ignore.case = TRUE)
+    if (length(roles)) out <- out & drug$role_cod %chin% roles
+    out
+}
+
+# Build one report set per pattern before applying any report-level logic.
+.reports_with_sets_mem <- function(drug, patterns, roles, drug_col) {
+    lapply(patterns, function(p) {
+        unique(drug$primaryid[
+            .reports_with_row_hit(drug, p, roles[[p]], drug_col)
+        ])
     })
-    ids <- if (identical(logic, "and")) Reduce(intersect, id_sets) else unique(unlist(id_sets))
-    if (length(excludes)) {
-        ex <- lapply(excludes, function(p) {
-            drug$primaryid[grepl(p, drug[[drug_col]], ignore.case = TRUE)]
-        })
-        ids <- setdiff(ids, unique(unlist(ex, use.names = FALSE)))
-    }
-    ids
+}
+
+# Every pattern's set already includes all matching rows, regardless of
+# character encoding. Exclusions are also report sets from the complete
+# drug table, and are applied only after AND/OR has been resolved.
+.reports_with_combine <- function(id_sets, logic, exclude_sets) {
+    ids <- if (identical(logic, "and")) Reduce(intersect, id_sets) else Reduce(union, id_sets)
+    excluded <- Reduce(union, exclude_sets, init = character())
+    setdiff(ids, excluded)
 }
 
 # ---------- db backend ----------
@@ -202,44 +206,19 @@
     sql
 }
 
-# Pushed-down reports matching every/any pattern, restricted to pure-ASCII
-# drug values, with SQL-safe report-level exclusions. The caller unions the
-# non-ASCII rows re-matched in R (see faers_reports_with) so both backends
-# always agree on the folded result.
-.reports_with_ids_db <- function(con, patterns, logic, roles, excludes, drug_col) {
-    conds <- vapply(patterns, function(p) {
-        c <- .reports_with_sql_cond(p, roles[[p]], drug_col)
-        if (is.null(c)) return(NA_character_)
-        sprintf(
+# Union SQL's ASCII hits and R's non-ASCII hits separately for EACH pattern.
+# Combining the two halves after AND/exclusion would miss cross-half matches
+# or reintroduce reports whose exclusion was in the other half.
+.reports_with_sets_db <- function(con, patterns, roles, drug_col, nonascii) {
+    nonascii_sets <- .reports_with_sets_mem(nonascii, patterns, roles, drug_col)
+    lapply(seq_along(patterns), function(i) {
+        cond <- .reports_with_sql_cond(patterns[[i]], roles[[patterns[[i]]]], drug_col)
+        ascii_ids <- DBI::dbGetQuery(con, sprintf(
             "SELECT DISTINCT primaryid FROM %s WHERE %s",
-            db_qident(db_field_table("drug")), c
-        )
-    }, character(1L))
-    if (any(is.na(conds))) {
-        return(NULL) # signal fallback
-    }
-    joiner <- if (identical(logic, "and")) "INTERSECT" else "UNION"
-    sql_ids <- paste(conds, collapse = sprintf(" %s ", joiner))
-    if (length(excludes)) {
-        # exclude: report-level, role-agnostic. SQL-safe exclusion patterns
-        # are folded into the query below; unsafe ones trigger the R fallback.
-        safe <- vapply(excludes, .reports_with_pushdown_safe, logical(1L))
-        if (!all(safe)) {
-            return(NULL)
-        }
-        ex_conds <- vapply(excludes, function(p) {
-            sprintf(
-                "SELECT DISTINCT primaryid FROM %s WHERE regexp_matches(%s, '%s', 'i')",
-                db_qident(db_field_table("drug")), db_qident(drug_col),
-                gsub("'", "''", p, fixed = TRUE)
-            )
-        }, character(1L))
-        sql_ids <- sprintf(
-            "SELECT primaryid FROM (%s) WHERE primaryid NOT IN (%s)",
-            sql_ids, paste(ex_conds, collapse = " UNION ")
-        )
-    }
-    DBI::dbGetQuery(con, sprintf("SELECT DISTINCT primaryid FROM (%s)", sql_ids))$primaryid
+            db_qident(db_field_table("drug")), cond
+        ))$primaryid
+        union(ascii_ids, nonascii_sets[[i]])
+    })
 }
 
 # SQL fragment collecting the non-ASCII drug rows the pushed-down condition
@@ -304,8 +283,9 @@
 #' (letters, digits, spaces, underscores, hyphens). Any other pattern —
 #' character classes, quantifiers, lookarounds — is matched in R after
 #' collecting the drug table, so both backends always agree on the matched
-#' report set. Pushed-down `"count"` results are computed in the database
-#' without collecting report identifiers.
+#' report set. SQL and R matches are combined per pattern before applying
+#' AND/OR logic and report-level exclusions. Report identifiers are collected
+#' to combine these sets, including for `"count"` results.
 #'
 #' ## Empty results
 #'
@@ -375,65 +355,29 @@ faers_reports_with <- function(.object, .drugs, .roles = NULL,
 
     drug_col <- .reports_with_pick_col(.object, .drug_col)
 
-    # ---- resolve the matched report set ----
-    if (!is.null(.object@db)) {
-        db_ids_raw <- .reports_with_ids_db(
-            .object@db@con, .drugs, .logic, .roles, .exclude_drugs, drug_col
+    # Match each inclusion and exclusion against the full logical drug
+    # table before combining report sets. Only non-ASCII rows need collecting
+    # on the literal SQL path; complex regexes use the existing R fallback.
+    if (!is.null(.object@db) &&
+        .reports_with_pushdown_safe(c(.drugs, .exclude_drugs))) {
+        con <- .object@db@con
+        nonascii <- data.table::as.data.table(.reports_with_nonascii_db(con, drug_col))
+        data.table::setnames(nonascii, "drug_value", drug_col)
+        id_sets <- .reports_with_sets_db(con, .drugs, .roles, drug_col, nonascii)
+        exclude_sets <- .reports_with_sets_db(
+            con, .exclude_drugs, list(), drug_col, nonascii
         )
-        ids <- db_ids_raw
-        if (is.null(ids)) {
-            # non-pushdown-safe pattern (or mixed): collect + match in R
-            drug <- faers_get(.object, "drug")
-            ids <- .reports_with_ids_mem(
-                drug, .drugs, .logic, .roles, .exclude_drugs, drug_col
-            )
-        } else {
-            # RE2 folds Unicode where TRE does not (Kelvin sign vs "k"), so
-            # pushed-down matches are confined to ASCII rows. Re-match the
-            # non-ASCII rows here and union, so the report set is identical
-            # to the memory backend's TRE semantics.
-            nonascii <- .reports_with_nonascii_db(.object@db@con, drug_col)
-            if (nrow(nonascii)) {
-                nonascii <- data.table::as.data.table(nonascii)
-                data.table::setnames(nonascii, "drug_value", drug_col)
-                nonascii_ids <- .reports_with_ids_mem(
-                    nonascii, .drugs, .logic, .roles, .exclude_drugs, drug_col
-                )
-                ids <- union(ids, nonascii_ids)
-            }
-        }
     } else {
         drug <- faers_get(.object, "drug")
-        ids <- .reports_with_ids_mem(
-            drug, .drugs, .logic, .roles, .exclude_drugs, drug_col
-        )
+        id_sets <- .reports_with_sets_mem(drug, .drugs, .roles, drug_col)
+        exclude_sets <- .reports_with_sets_mem(drug, .exclude_drugs, list(), drug_col)
     }
+    ids <- .reports_with_combine(id_sets, .logic, exclude_sets)
     ids <- sort(unique(as.character(ids)))
 
-    # ---- diagnostics: per-pattern hit counts (message, not warning) ----
-    # On the pushed-down db path these are COUNT(DISTINCT primaryid) queries;
-    # nothing is materialized. Other paths already hold `drug` in memory.
-    drug_col_name <- drug_col
-    if (!is.null(.object@db) && !is.null(db_ids_raw)) {
-        per_hit <- vapply(seq_along(.drugs), function(i) {
-            cond <- .reports_with_sql_cond(
-                .drugs[[i]], .roles[[.drugs[[i]]]], drug_col_name
-            )
-            as.integer(DBI::dbGetQuery(
-                .object@db@con,
-                sprintf(
-                    "SELECT COUNT(DISTINCT primaryid) AS n FROM %s WHERE %s",
-                    db_qident(db_field_table("drug")), cond
-                )
-            )$n[[1L]])
-        }, integer(1L))
-    } else {
-        per_hit <- vapply(.drugs, function(p) {
-            length(.reports_with_ids_mem(
-                drug, p, "or", .roles, character(), drug_col_name
-            ))
-        }, integer(1L))
-    }
+    # Count the same per-pattern report sets used above, including non-ASCII
+    # hits and deduplicating reports that match in both halves.
+    per_hit <- vapply(id_sets, length, integer(1L))
     if (length(ids) || any(per_hit > 0L)) {
         cli::cli_inform(
             "{.fn faers_reports_with} matched {length(ids)} report{?s}: {.val {paste0(.drugs, \": \", per_hit)}}"

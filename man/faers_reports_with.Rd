@@ -95,8 +95,9 @@ For database-backed objects a pattern is pushed into SQL
 (letters, digits, spaces, underscores, hyphens). Any other pattern —
 character classes, quantifiers, lookarounds — is matched in R after
 collecting the drug table, so both backends always agree on the matched
-report set. Pushed-down \code{"count"} results are computed in the database
-without collecting report identifiers.
+report set. SQL and R matches are combined per pattern before applying
+AND/OR logic and report-level exclusions. Report identifiers are collected
+to combine these sets, including for \code{"count"} results.
 }
 
 \subsection{Empty results}{

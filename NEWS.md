@@ -9,7 +9,8 @@
   the same drug row (fixed-dose combination products). Returns the filtered
   object, sorted `primaryid` vector or a count. On duckdb-backed objects
   plain-literal patterns are pushed down to SQL (`regexp_matches`), other
-  patterns fall back to identical R matching, so both backends always agree;
+  patterns fall back to identical R matching. Per-drug matches are combined
+  across ASCII and non-ASCII rows before AND/OR and report-level exclusions;
   object-mode returns build on a private copy, leaving the source database
   untouched. Per-pattern hit counts are reported as a message; empty result
   sets are a legitimate outcome, not an error.
